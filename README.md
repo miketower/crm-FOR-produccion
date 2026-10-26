@@ -1,8 +1,8 @@
 # CRM FOR
 
 Aplicación CodeIgniter con administración de usuarios, roles y permisos.
-Esta versión requiere **PHP 8.3 o 8.4** y Composer 2. La versión de PHP de MAMP
-(Apache) y la de la terminal deben coincidir. `git pull` no actualiza PHP.
+Esta versión funciona con **PHP 8.0.3** (MAMP) y Composer 2. Usa el PHP de MAMP tanto
+en Apache como en la terminal. `git pull` no actualiza PHP.
 
 ## Recibir actualizaciones
 
@@ -18,6 +18,24 @@ composer check-platform-reqs
 Si hay cambios locales, consérvalos antes de actualizar. No uses `reset --hard`
 para resolver un conflicto sin revisar esos cambios. El archivo `.env` local
 contiene tu conexión a MAMP y no se debe reemplazar con el del entorno cloud.
+
+## Arrancar con MAMP PHP 8.0.3 en macOS
+
+En la misma terminal donde está el proyecto:
+
+```sh
+export PATH="/Applications/MAMP/bin/php/php8.0.3/bin:$PATH"
+php -v
+composer install
+composer check-platform-reqs
+php spark serve
+```
+
+Conserva la conexión local de `.env` y mantén MySQL de MAMP encendido.
+El lockfile se resuelve contra PHP 8.0.3 para conservar la compatibilidad; la
+aplicación y las pruebas usan CodeIgniter 4.4 y PHPUnit 9.6. Este lockfile está
+destinado al entorno local con PHP 8.0.3; PHP 8.3/8.4 necesita otra resolución de
+dependencias y no es el objetivo de esta entrega.
 
 ## Actualizar la base desde phpMyAdmin
 

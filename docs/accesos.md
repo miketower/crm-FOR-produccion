@@ -26,8 +26,9 @@ eliminadas pierden el acceso aunque tengan una sesión abierta.
 ## Actualización desde GitHub y phpMyAdmin
 
 Los cambios de código se reciben con `git pull --ff-only origin main` y las
-versiones exactas de las dependencias con `composer install`. PHP debe ser 8.3 o
-8.4 tanto en MAMP como en la terminal: Git no cambia la versión de PHP instalada.
+versiones exactas de las dependencias con `composer install`. PHP debe ser 8.0.3 o
+compatible con las versiones fijadas en el lockfile, tanto en MAMP como en la
+terminal: Git no cambia la versión de PHP instalada.
 La configuración `.env` local se conserva y no debe copiarse desde el entorno cloud.
 
 Para actualizar la base sin ejecutar comandos PHP, selecciona la base local del

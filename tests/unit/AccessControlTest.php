@@ -232,9 +232,10 @@ final class AccessControlTest extends CIUnitTestCase
 
     public function testEveryConfiguredRouteHasAnExplicitAuthorizationPolicy(): void
     {
-        $routes = service('routes');
+        $routes = service('routes')->loadRoutes();
         $catalog = config(\Config\Access::class);
-        foreach (['GET', 'POST'] as $verb) {
+        foreach (['get', 'post'] as $verb) {
+            $this->assertNotEmpty($routes->getRoutes($verb), 'The real application routes must be loaded.');
             foreach ($routes->getRoutes($verb) as $handler) {
                 if (!is_string($handler) || !str_contains($handler, '::')) {
                     continue;
