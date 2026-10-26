@@ -386,8 +386,8 @@ window.calcularEspecializado = function() {
     let comisionInput = document.getElementById('esp_comision_monto');
     if(comisionInput) comisionInput.value = comisionFOR > 0 ? comisionFOR.toFixed(2) : '';
 
-    // C) Total Propuesta FOR = Neto FOR + Excedente + Carga FOR + Comisión FOR
-    const totalFOR = netoFOR + excedente + cargaFOR + comisionFOR;
+    // C) Total Propuesta FOR = Bruto FOR + Excedente + Carga FOR + Comisión FOR
+    const totalFOR = brutoFOR + excedente + cargaFOR + comisionFOR;
 
     // --- 3. AHORROS ---
     const ahorroMensual = total100 - totalFOR; 
@@ -777,7 +777,7 @@ window.fijarOpcionActual = function() {
             comision_monto: neto100 * (pctComision / 100)
         };
         opcion.esp.total_100 = opcion.esp.base_100 + opcion.esp.carga_100;
-        opcion.esp.total_for = opcion.esp.neto_for + opcion.esp.excedente + opcion.esp.carga_for + opcion.esp.comision_monto;
+        opcion.esp.total_for = opcion.esp.sueldos_for + opcion.esp.excedente + opcion.esp.carga_for + opcion.esp.comision_monto;
     }
 
     window.opcionesPropuesta.push(opcion);

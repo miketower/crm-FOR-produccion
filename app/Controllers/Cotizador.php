@@ -119,8 +119,6 @@ class Cotizador extends BaseController
             ];
             
             $db->table('propuestas_for')->insert($dataPropuesta);
-            
-            $db->table('propuestas_for')->insert($dataPropuesta);
             $propuesta_id = $db->insertID();
 
             // 2. Guardar Market Benchmarks
@@ -183,7 +181,9 @@ class Cotizador extends BaseController
                     'base_100'       => $data['esp_base_100'] ?? 0,
                     'neto_100'       => $data['esp_neto_100'] ?? 0,
                     'carga_100'      => $data['esp_carga_100'] ?? 0,
-                    'sueldos_for'    => $data['esp_sueldos_for'] ?? 0,
+                    'sueldos_for'    => $data['esp_bruto_for'] ?? 0,
+                    'neto_for'       => $data['esp_neto_for'] ?? 0,
+                    'excedente'      => $data['esp_excedente'] ?? 0,
                     'carga_for'      => $data['esp_carga_for'] ?? 0,
                     'costo_op_100'   => $data['esp_total_100'] ?? 0,
                     'comision_monto' => $data['esp_comision_monto'] ?? 0,

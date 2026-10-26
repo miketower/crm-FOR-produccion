@@ -27,6 +27,18 @@ seed their fixtures under `tests/_support`; they do not use the CRM database.
 No MySQL service, application user, production credentials, or `.env` file is
 needed to run the suite.
 
+The quotation regression tests cover creation, editing, and persistence for
+Servicio Especializado and Mixto, including the gross salary, net salary, and surplus.
+The browser calculations and PDF option data have a separate dependency-free
+Node.js suite (Node 18+):
+
+```sh
+node --test tests/js/cotizador.test.js
+```
+
+It checks that Total FOR includes the gross FOR salary, surplus, social cost, and
+FOR commission, while preserving the existing PROEM, surplus, and commission formulas.
+
 The suite covers database reads and soft deletion, session storage, and basic
 application configuration. Run a subset with:
 

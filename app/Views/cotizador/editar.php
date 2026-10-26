@@ -399,16 +399,27 @@
                     </div>
 
                     <div class="col-md-6">
-                        <p class="text-center fw-bold text-info mb-3 text-uppercase">Escenario Especializado</p>
+                        <p class="text-center fw-bold text-info mb-3 text-uppercase">Escenario Propuesta FOR</p>
                         <div class="mb-3">
-                            <label class="small text-muted">SUELDOS (FOR)</label>
-                            <input type="number" id="esp_sueldos_for" class="form-control" value="<?= esc($esp['sueldos_for'] ?? '') ?>" oninput="calcularEspecializado()">
+                            <label class="small text-muted">1. SALARIO BRUTO (FOR)</label>
+                            <input type="number" id="esp_bruto_for" class="form-control" value="<?= esc($esp['sueldos_for'] ?? '') ?>" oninput="calcularEspecializado()">
                         </div>
                         <div class="mb-3">
-                            <label class="small text-muted">CARGA SOCIAL (FOR)</label>
+                            <label class="small text-muted">2. SALARIO NETO (FOR)</label>
+                            <input type="number" id="esp_neto_for" class="form-control" value="<?= esc($esp['neto_for'] ?? '') ?>" oninput="calcularEspecializado()">
+                        </div>
+                        <div class="mb-3">
+                            <label class="small text-muted">3. CARGA SOCIAL (FOR)</label>
                             <input type="number" id="esp_carga_for" class="form-control" value="<?= esc($esp['carga_for'] ?? '') ?>" oninput="calcularEspecializado()">
                         </div>
-                        <div class="p-3 bg-info bg-opacity-10 rounded text-center border border-info" style="margin-top: 5rem;">
+                        <div class="mb-3 p-2 bg-info bg-opacity-10 rounded border border-info">
+                            <label class="small text-info fw-bold">4. COMISIÓN FOR (GANANCIA) ($)</label>
+                            <input type="number" id="esp_comision_monto" class="form-control bg-light" placeholder="Calculado automáticamente" readonly>
+                            <span class="small text-muted d-block mt-1" style="font-size: 0.75rem;">
+                                *Se calcula sobre el Salario Neto 100% IMSS.
+                            </span>
+                        </div>
+                        <div class="p-3 bg-info bg-opacity-10 rounded text-center mt-4 border border-info">
                             <p class="small text-info mb-1 fw-bold">TOTAL ESPECIALIZADO</p>
                             <h4 id="res_esp_for_total" class="mb-0 text-info fw-bold">$ 0.00</h4>
                         </div>
@@ -418,8 +429,8 @@
                 <div class="row mt-4 g-2 text-center justify-content-center">
                     <div class="col-md-3">
                         <div class="p-2 border rounded bg-light">
-                            <p class="small text-muted mb-0 fw-bold">Comisión (Monto)</p>
-                            <h6 id="res_esp_comision_monto" class="text-dark mb-0">$ 0.00</h6>
+                            <p class="small text-muted mb-0 fw-bold">Excedente</p>
+                            <h6 id="esp_excedente_val" class="text-dark mb-0">$ 0.00</h6>
                         </div>
                     </div>
                     <div class="col-md-4">
