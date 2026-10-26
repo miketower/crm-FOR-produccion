@@ -3,14 +3,16 @@
 
 # Dependencias de Composer
 vendor/
+node_modules/
 
-# Archivos generados dinámicamente por CI4
+# Archivos generados dinámicamente por CodeIgniter 4
 writable/cache/
 writable/logs/
 writable/session/
 writable/debugbar/
+writable/uploads/
 
-# Archivos subidos por los usuarios
+# Archivos subidos por los usuarios en el CRM
 public/uploads/
 uploads/prospectos/
 uploads/
