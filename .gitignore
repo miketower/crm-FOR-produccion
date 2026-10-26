@@ -1,0 +1,20 @@
+# Entorno y credenciales
+.env
+
+# Dependencias de Composer
+vendor/
+
+# Archivos generados dinámicamente por CI4
+writable/cache/
+writable/logs/
+writable/session/
+writable/debugbar/
+
+# Archivos subidos por los usuarios
+public/uploads/
+uploads/prospectos/
+uploads/
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db

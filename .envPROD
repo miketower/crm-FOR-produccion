@@ -1,0 +1,86 @@
+#--------------------------------------------------------------------
+# ENVIRONMENT
+#--------------------------------------------------------------------
+
+# El entorno debe ser 'production' o 'development'
+CI_ENVIRONMENT = production
+
+#--------------------------------------------------------------------
+# APP
+#--------------------------------------------------------------------
+
+app.baseURL = 'https://forhumancapital.mx/webapp'
+# app_baseURL = ''
+# app.forceGlobalSecureRequests = false
+# app.CSPEnabled = false
+
+#--------------------------------------------------------------------
+# DATABASE
+#--------------------------------------------------------------------
+
+database.default.hostname = localhost
+database.default.database = theblanc_webapp
+database.default.username = theblanc_webapp
+database.default.password = 2!ZWi8Eo+AO{
+database.default.DBDriver = MySQLi
+
+# En producción usualmente es 3306. 8889 es solo para MAMP local.
+database.default.port = 3306
+
+#--------------------------------------------------------------------
+# EMAIL
+#--------------------------------------------------------------------
+
+email.protocol = 'smtp'
+email.SMTPHost = 'sandbox.smtp.mailtrap.io'
+email.SMTPUser = '37d3592c25d4e5'
+email.SMTPPass = 'c0858d9ffc1504'
+email.SMTPPort = 587
+email.SMTPCrypto = 'tls'
+
+#--------------------------------------------------------------------
+# CONTENT SECURITY POLICY
+#--------------------------------------------------------------------
+
+# contentsecuritypolicy.reportOnly = false
+# contentsecuritypolicy.defaultSrc = 'none'
+# contentsecuritypolicy.scriptSrc = 'self'
+# contentsecuritypolicy.styleSrc = 'self'
+# contentsecuritypolicy.imageSrc = 'self'
+
+#--------------------------------------------------------------------
+# COOKIE
+#--------------------------------------------------------------------
+
+# cookie.prefix = ''
+# cookie.expires = 0
+# cookie.path = '/'
+# cookie.domain = ''
+# cookie.secure = false
+# cookie.httponly = false
+# cookie.samesite = 'Lax'
+# cookie.raw = false
+
+#--------------------------------------------------------------------
+# ENCRYPTION
+#--------------------------------------------------------------------
+
+# Genera una clave única para tu aplicación
+# encryption.key = 
+# encryption.driver = OpenSSL
+
+#--------------------------------------------------------------------
+# SESSION
+#--------------------------------------------------------------------
+
+# session.driver = 'CodeIgniter\Session\Handlers\FileHandler'
+# session.cookieName = 'ci_session'
+# session.expiration = 7200
+# session.savePath = null
+
+#--------------------------------------------------------------------
+# LOGGER
+#--------------------------------------------------------------------
+
+# threshold 1 = solo errores. 4 = todo (debug).
+logger.threshold = 1
