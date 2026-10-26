@@ -58,12 +58,13 @@
 <body>
 
 <?php 
+    $authorization = service('authorization');
     $db = \Config\Database::connect();
     $userIdSesion = session()->get('id');
 
     // Consultar notificaciones sin leer de la BD para el usuario en sesión
     $misNotificaciones = [];
-    if ($userIdSesion) {
+    if ($userIdSesion && $authorization->can('operaciones.ver')) {
         $misNotificaciones = $db->table('notificaciones')
                                 ->where('user_id', $userIdSesion)
                                 ->where('leido', 0)
@@ -72,316 +73,33 @@
                                 ->getResultArray();
     }
 
-    $userEmail = session()->get('email');
-    $userRole  = session()->get('role');
-    
-    // Identificadores de usuarios con acceso restricto/especial
-    $esLoyda = ($userEmail === 'lberlangazambrano@gmail.com');
-    $esVictoriaAdmin = ($userRole === 'admin' || $userEmail === 'admin@forhuman.com' || $userEmail === 'admin@victoria.com');
-
-    $usuariosCaptura = [
-        'danya.cruz@forhumancapital.mx',
-        'samuel.nunez@theblancgroup.com',
-        'alicia.gutierrez@forhumancapital.mx'
-    ];
-    $esCapturador = in_array($userEmail, $usuariosCaptura);
-
-    $usuariosAsociados = [
-        'aurora.esquivel@forhumancapital.mx',
-        'yuridia.juarez@forhumancapital.mx'
-    ];
-    $esAsociados = in_array($userEmail, $usuariosAsociados);
-
-    // Redirección de marca según el tipo de usuario
-    $brandUrl = base_url('dashboard');
-    if ($userRole === 'operaciones') {
-        $brandUrl = base_url('operaciones');
-    } elseif ($esLoyda) {
-        $brandUrl = base_url('prospectos');
-    } elseif ($userEmail === 'carlos.sarmiento@forhumancapital.mx') {
-        $brandUrl = base_url('vacantes');
-    } elseif ($esCapturador) {
-        $brandUrl = base_url('carga-comercial');
-    } elseif ($esAsociados) {
-        $brandUrl = base_url('socios');
-    } elseif ($userRole === 'events_rep') {
-        $brandUrl = base_url('eventos');
-    } elseif ($userRole === 'commercial_rep') {
-        $brandUrl = base_url('dashboard/pipeline');
-    }
+    $authorization = service('authorization');
+    $brandUrl = base_url($authorization->landingPage());
 ?>
 
 <nav class="sidebar">
-    <a href="<?= $brandUrl ?>" class="brand text-center py-3">
+    <a href="<?= esc($brandUrl, 'attr') ?>" class="brand text-center py-3">
         <img src="<?= base_url('assets/img/logo-white.png') ?>" alt="Logo CRM" class="logo-img img-fluid">
     </a>
     <ul class="list-unstyled components">
-        
-        <?php if ($userRole === 'operaciones'): ?>
-            <!-- ========================================================== -->
-            <!-- MENÚ EXCLUSIVO PARA ROL OPERACIONES (SOLO BITÁCORA) -->
-            <!-- ========================================================== -->
-            <li class="px-3 text-uppercase small text-muted" style="font-size: 0.7rem;">Mesa de Ayuda</li>
-            <li class="nav-item">
-                <a class="nav-link <?= (strpos(uri_string(), 'operaciones') !== false) ? 'active' : '' ?>" href="<?= base_url('operaciones') ?>">
-                    <i class="bi bi-life-preserver me-2"></i> <span>Bitácora Operativa</span>
-                </a>
-            </li>
-
-        <?php elseif ($esLoyda): ?>
-            <!-- MENÚ EXCLUSIVO LOYDA BERLANGA (SOLO PERFILAMIENTO) -->
-            <li class="px-3 text-uppercase small text-muted" style="font-size: 0.7rem;">Operación</li>
-            <li class="nav-item">
-                <a href="<?= base_url('prospectos') ?>" class="<?= (strpos(uri_string(), 'prospectos') !== false) ? 'active' : '' ?>">
-                    <i class="bi bi-list-task"></i> <span>Perfilamiento</span>
-                </a>
-            </li>
-
-        <?php elseif ($userEmail === 'carlos.sarmiento@forhumancapital.mx'): ?>
-            <!-- MENÚ EXCLUSIVO CARLOS SARMIENTO (SOLO VACANTES) -->
-            <li class="px-3 text-uppercase small text-muted" style="font-size: 0.7rem;">Atracción de Talento</li>
-            <li class="nav-item">
-                <a class="nav-link <?= (uri_string() == 'vacantes') ? 'active' : '' ?>" href="<?= base_url('vacantes') ?>">
-                    <i class="bi bi-kanban"></i> <span>Pipeline Vacantes</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link <?= (strpos(uri_string(), 'vacantes/crear') !== false) ? 'active' : '' ?>" href="<?= base_url('vacantes/crear') ?>">
-                    <i class="bi bi-plus-circle"></i> <span>Alta de Vacante</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link" href="<?= base_url('vacantes/tv') ?>" target="_blank">
-                    <i class="bi bi-tv"></i> <span>Pantalla TV <i class="bi bi-box-arrow-up-right ms-1" style="font-size:0.7rem;"></i></span>
-                </a>
-            </li>
-
-        <?php elseif ($esCapturador): ?>
-            <!-- MENÚ RESTRINGIDO PARA CAPTURADORES -->
-            <li class="px-3 text-uppercase small text-muted" style="font-size: 0.7rem;">Operación</li>
-            <li class="nav-item">
-                <a class="nav-link <?= (strpos(uri_string(), 'carga-comercial') !== false) ? 'active' : '' ?>" href="<?= base_url('carga-comercial') ?>">
-                    <i class="bi bi-calendar2-week"></i> <span>Carga Semanal</span>
-                </a>
-            </li>
-
-            <?php if ($userEmail === 'danya.cruz@forhumancapital.mx'): ?>
-                <li class="mt-3 px-3 text-uppercase small text-muted" style="font-size: 0.7rem;">Atracción de Talento</li>
+        <?php foreach ($authorization->menu() as $group => $items): ?>
+            <li class="mt-3 px-3 text-uppercase small text-light" style="font-size: 0.7rem;"><?= esc($group) ?></li>
+            <?php foreach ($items as $item): ?>
                 <li class="nav-item">
-                    <a class="nav-link <?= (uri_string() == 'vacantes') ? 'active' : '' ?>" href="<?= base_url('vacantes') ?>">
-                        <i class="bi bi-kanban"></i> <span>Pipeline Vacantes</span>
+                    <a class="nav-link <?= (uri_string() === $item['url'] || str_starts_with(uri_string(), $item['url'] . '/')) ? 'active' : '' ?>"
+                       href="<?= esc(base_url($item['url']), 'attr') ?>" <?= !empty($item['blank']) ? 'target="_blank" rel="noopener"' : '' ?>>
+                        <i class="bi <?= esc($item['icon'], 'attr') ?> me-2"></i><span><?= esc($item['label']) ?></span>
                     </a>
                 </li>
-                <li class="nav-item">
-                    <a class="nav-link <?= (strpos(uri_string(), 'vacantes/crear') !== false) ? 'active' : '' ?>" href="<?= base_url('vacantes/crear') ?>">
-                        <i class="bi bi-plus-circle"></i> <span>Alta de Vacante</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="<?= base_url('vacantes/tv') ?>" target="_blank">
-                        <i class="bi bi-tv"></i> <span>Pantalla TV <i class="bi bi-box-arrow-up-right ms-1" style="font-size:0.7rem;"></i></span>
-                    </a>
-                </li>
-
-                <li class="mt-3 px-3 text-uppercase small text-muted" style="font-size: 0.7rem;">Operación</li>
-                <li>
-                    <a href="<?= base_url('prospectos') ?>" class="<?= (strpos(uri_string(), 'prospectos') !== false) ? 'active' : '' ?>">
-                        <i class="bi bi-list-task"></i> <span>Perfilamiento</span>
-                    </a>
-                </li>
-            <?php endif; ?>
-
-        <?php elseif ($userRole === 'events_rep'): ?>
-            <!-- MENÚ EXCLUSIVO PARA EVENTOS (LUCIANA OSUNA) -->
-            <li class="px-3 text-uppercase small text-muted" style="font-size: 0.7rem;">Gestión de Eventos</li>
-            <li class="nav-item">
-                <a class="nav-link <?= (uri_string() == 'eventos' || strpos(uri_string(), 'eventos/show') !== false) ? 'active' : '' ?>" href="<?= base_url('eventos') ?>">
-                    <i class="bi bi-calendar2-event"></i> <span>Eventos</span>
-                </a>
-            </li>
-            <li class="mt-3 px-3 text-uppercase small text-muted" style="font-size: 0.7rem;">Operación</li>
-            <li>
-                <a href="<?= base_url('socios') ?>" class="<?= (uri_string() == 'socios') ? 'active' : '' ?>">
-                    <i class="bi bi-person-badge"></i> <span>Asociados FOR</span>
-                </a>
-            </li>
-            <li>
-                <a href="<?= base_url('socios/cierre-mes') ?>" class="<?= (strpos(uri_string(), 'cierre-mes') !== false) ? 'active' : '' ?>">
-                    <i class="bi bi-calendar-check me-2"></i> <span>Cierre de Mes (Asociados)</span>
-                </a>
-            </li>
-            <li>
-                <a href="<?= base_url('prospectos') ?>" class="<?= (strpos(uri_string(), 'prospectos') !== false) ? 'active' : '' ?>">
-                    <i class="bi bi-list-task"></i> <span>Perfilamiento</span>
-                </a>
-            </li>
-
-        <?php elseif ($esAsociados): ?>
-            <!-- MENÚ EXCLUSIVO AURORA Y YURIDIA -->
-            <li class="px-3 text-uppercase small text-muted" style="font-size: 0.7rem;">Operación</li>
-            <li>
-                <a href="<?= base_url('socios') ?>" class="<?= (uri_string() == 'socios') ? 'active' : '' ?>">
-                    <i class="bi bi-person-badge"></i> <span>Asociados FOR</span>
-                </a>
-            </li>
-            <li>
-                <a href="<?= base_url('socios/cierre-mes') ?>" class="<?= (strpos(uri_string(), 'cierre-mes') !== false) ? 'active' : '' ?>">
-                    <i class="bi bi-calendar-check me-2"></i> <span>Cierre de Mes (Asociados)</span>
-                </a>
-            </li>
-            <li>
-                <a href="<?= base_url('prospectos') ?>" class="<?= (strpos(uri_string(), 'prospectos') !== false) ? 'active' : '' ?>">
-                    <i class="bi bi-list-task"></i> <span>Perfilamiento</span>
-                </a>
-            </li>
-
-        <?php elseif ($userRole === 'commercial_rep'): ?>
-            <!-- MENÚ EXCLUSIVO COMERCIAL (DAVID ZAPATA) -->
-            <li class="px-3 text-uppercase small text-muted" style="font-size: 0.7rem;">Operación</li>
-            <li class="nav-item">
-                <a class="nav-link <?= (strpos(uri_string(), 'pipeline') !== false) ? 'active' : '' ?>" href="<?= base_url('dashboard/pipeline') ?>">
-                    <i class="bi bi-kanban"></i> <span>Pipeline</span>
-                </a>
-            </li>
-            <li>
-                <a href="<?= base_url('prospectos') ?>" class="<?= (strpos(uri_string(), 'prospectos') !== false) ? 'active' : '' ?>">
-                    <i class="bi bi-list-task"></i> <span>Perfilamiento</span>
-                </a>
-            </li>
-
-            <li class="mt-4 px-3 text-uppercase small text-muted" style="font-size: 0.7rem;">Herramientas</li>
-            <li>
-                <a href="<?= base_url('calculadora') ?>" class="<?= (strpos(uri_string(), 'calculadora') !== false) ? 'active' : '' ?>">
-                    <i class="bi bi-calculator"></i> Calculadora Nómina
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link <?= (url_is('cotizador*')) ? 'active' : '' ?>" href="<?= base_url('cotizador') ?>">
-                    <i class="bi bi-calculator"></i> <span>Cotizador</span>
-                </a>
-            </li>
-
-        <?php else: ?>
-            <!-- MENÚ COMPLETO PARA ADMINS Y RESTO DEL EQUIPO -->
-            <li><a href="<?= base_url('dashboard') ?>" class="<?= uri_string() == 'dashboard' ? 'active' : '' ?>"><i class="bi bi-grid-1x2-fill"></i> Inicio</a></li>
-            
-            <li class="mt-3 px-3 text-uppercase small text-muted" style="font-size: 0.7rem;">Operación</li>
-            <li class="nav-item">
-                <a class="nav-link <?= (strpos(uri_string(), 'pipeline') !== false) ? 'active' : '' ?>" href="<?= base_url('dashboard/pipeline') ?>">
-                    <i class="bi bi-kanban"></i> <span>Pipeline Ventas</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link <?= (strpos(uri_string(), 'carga-comercial') !== false) ? 'active' : '' ?>" href="<?= base_url('carga-comercial') ?>">
-                    <i class="bi bi-calendar2-week"></i> <span>Carga Semanal</span>
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link <?= (uri_string() == 'eventos' || strpos(uri_string(), 'eventos/show') !== false) ? 'active' : '' ?>" href="<?= base_url('eventos') ?>">
-                    <i class="bi bi-calendar-event"></i> <span>Eventos</span>
-                </a>
-            </li>
-            <li><a href="<?= base_url('prospectos') ?>" class="<?= (strpos(uri_string(), 'prospectos') !== false) ? 'active' : '' ?>"><i class="bi bi-list-task"></i> Perfilamiento</a></li>
-            
-            <!-- BITÁCORA OPERATIVA -->
-            <li class="nav-item">
-                <a class="nav-link <?= (strpos(uri_string(), 'operaciones') !== false) ? 'active' : '' ?>" href="<?= base_url('operaciones') ?>">
-                    <i class="bi bi-life-preserver me-2"></i>
-                    <span>Bitácora Operativa</span>
-                </a>
-            </li>
-
-            <li class="nav-item">
-                <a class="nav-link <?= (strpos(uri_string(), 'forecast') !== false) ? 'active' : '' ?>" href="<?= base_url('forecast') ?>">
-                    <i class="bi bi-bullseye me-2"></i>
-                    <span>Forecast</span>
-                </a>
-            </li>
-
-            <!-- SECCIÓN VACANTES SOLO PARA ADMINISTRADORES -->
-            <?php if ($userRole === 'admin'): ?>
-                <li class="mt-3 px-3 text-uppercase small text-muted" style="font-size: 0.7rem;">Atracción de Talento</li>
-                <li class="nav-item">
-                    <a class="nav-link <?= (uri_string() == 'vacantes') ? 'active' : '' ?>" href="<?= base_url('vacantes') ?>">
-                        <i class="bi bi-kanban me-2"></i> <span>Pipeline Vacantes</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link <?= (strpos(uri_string(), 'vacantes/crear') !== false) ? 'active' : '' ?>" href="<?= base_url('vacantes/crear') ?>">
-                        <i class="bi bi-plus-circle me-2"></i> <span>Alta de Vacante</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="<?= base_url('vacantes/tv') ?>" target="_blank">
-                        <i class="bi bi-tv me-2"></i> <span>Pantalla TV <i class="bi bi-box-arrow-up-right ms-1" style="font-size:0.7rem;"></i></span>
-                    </a>
-                </li>
-            <?php endif; ?>
-
-            <li class="mt-4 px-3 text-uppercase small text-muted" style="font-size: 0.7rem;">Configuración</li>
-            <?php if(session()->get('role') == 'admin'): ?>
-                <li><a href="<?= base_url('usuarios') ?>" class="<?= uri_string() == 'usuarios' ? 'active' : '' ?>"><i class="bi bi-people-fill"></i> Equipo / Usuarios</a></li>
-            <?php endif; ?>
-
-            <li><a href="<?= base_url('clientes') ?>"><i class="bi bi-building"></i> Clientes</a></li>
-            <li><a href="<?= base_url('socios') ?>" class="<?= (uri_string() == 'socios') ? 'active' : '' ?>"><i class="bi bi-person-badge"></i> Asociados FOR</a></li>
-            <!-- NUEVA OPCIÓN: CIERRE DE MES (ASOCIADOS) -->
-            <li><a href="<?= base_url('socios/cierre-mes') ?>" class="<?= (strpos(uri_string(), 'cierre-mes') !== false) ? 'active' : '' ?>"><i class="bi bi-calendar-check me-2"></i> Cierre de Mes (Asociados)</a></li>
-            
-            <li><a href="<?= base_url('ventas') ?>"><i class="bi bi-cash-coin"></i> Ventas e Ingresos</a></li>
-            <li><a href="<?= base_url('importar') ?>" class="<?= uri_string() == 'importar' ? 'active' : '' ?>"><i class="bi bi-cloud-upload"></i> Cierre Mensual</a></li>
-
-            <!-- DIRECTORIO DE FORMULARIOS (SOLO VICTORIA Y ADMINS) -->
-            <?php if ($esVictoriaAdmin): ?>
-                <li class="mt-3 px-3 text-uppercase small text-muted" style="font-size: 0.7rem;">Herramientas Web</li>
-                <li class="nav-item">
-                    <a class="nav-link <?= (strpos(uri_string(), 'directorio-formularios') !== false) ? 'active' : '' ?>" href="<?= base_url('directorio-formularios') ?>">
-                        <i class="bi bi-journal-code me-2"></i>
-                        <span>Directorio Formularios</span>
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link <?= (strpos(uri_string(), 'salarios') !== false) ? 'active' : '' ?>" href="<?= base_url('salarios') ?>">
-                        <i class="bi bi-journal-code me-2"></i>
-                        <span>Guía Global de Salarios 2027</span>
-                    </a>
-                </li>
-            <?php endif; ?>
-            <li class="mt-3 px-3 text-uppercase small text-muted" style="font-size: 0.7rem;">Herramientas Web</li>
-            <?php if($userEmail === 'carlos.sarmiento@forhumancapital.mx'): ?>
-                <li class="nav-item">
-                    <a class="nav-link <?= (strpos(uri_string(), 'salarios') !== false) ? 'active' : '' ?>" href="<?= base_url('salarios') ?>">
-                        <i class="bi bi-journal-code me-2"></i>
-                        <span>Guía Global de Salarios 2027</span>
-                    </a>
-                </li>
-            <?php endif; ?>
-            <li class="mt-4 px-3 text-uppercase small text-muted" style="font-size: 0.7rem;">Estrategia</li>
-            <li>
-                <a href="<?= base_url('formularios/alineacion') ?>" class="<?= (strpos(uri_string(), 'alineacion') !== false) ? 'active' : '' ?>">
-                    <i class="bi bi-file-earmark-check"></i> Alineación Estratégica
-                </a>
-            </li>
-
-            <li class="mt-4 px-3 text-uppercase small text-muted" style="font-size: 0.7rem;">Herramientas</li>
-            <li>
-                <a href="<?= base_url('calculadora') ?>" class="<?= (strpos(uri_string(), 'calculadora') !== false) ? 'active' : '' ?>">
-                    <i class="bi bi-calculator"></i> Calculadora Nómina
-                </a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link <?= (url_is('cotizador*')) ? 'active' : '' ?>" href="<?= base_url('cotizador') ?>">
-                    <i class="bi bi-calculator"></i> <span>Cotizador</span>
-                </a>
-            </li>
-        <?php endif; ?>
+            <?php endforeach; ?>
+        <?php endforeach; ?>
     </ul>
 </nav>
 
 <div class="main-content">
     <header class="top-navbar">
         <div class="d-flex align-items-center">
-            <h5 class="m-0 text-secondary">Bienvenido, <?= session()->get('name') ?? 'Usuario' ?></h5>
+            <h5 class="m-0 text-secondary">Bienvenido, <?= esc(session()->get('name') ?? 'Usuario') ?></h5>
         </div>
 
         <div class="d-flex align-items-center gap-4">
@@ -456,7 +174,7 @@
                     <?php endif; ?>
 
                     <!-- 3. TAREAS PENDIENTES -->
-                    <?php if ($userRole !== 'events_rep' && $userEmail !== 'carlos.sarmiento@forhumancapital.mx'): ?>
+                    <?php if ($authorization->can('prospectos.ver')): ?>
                         <li><h6 class="dropdown-header text-uppercase small fw-bold text-muted border-bottom py-2 mt-2"><i class="bi bi-list-check me-1"></i> Tareas Pendientes</h6></li>
                         <?php if (empty($tareasPendientes)): ?>
                             <li class="text-center py-4 text-muted">
@@ -488,7 +206,7 @@
                                 </li>
                             <?php endforeach; ?>
                         <?php endif; ?>
-                        <li><a class="dropdown-item text-center small text-primary fw-bold py-2 mt-2" href="<?= base_url('dashboard') ?>">Ver Dashboard</a></li>
+                        <?php if ($authorization->can('dashboard.ver')): ?><li><a class="dropdown-item text-center small text-primary fw-bold py-2 mt-2" href="<?= base_url('dashboard') ?>">Ver Dashboard</a></li><?php endif; ?>
                     <?php endif; ?>
 
                 </ul>
@@ -498,11 +216,11 @@
             <div class="dropdown">
                 <div class="user-profile" data-bs-toggle="dropdown">
                     <div class="text-end d-none d-sm-block">
-                        <div class="fw-bold small"><?= session()->get('name') ?></div>
+                        <div class="fw-bold small"><?= esc(session()->get('name')) ?></div>
                         <div class="text-muted small" style="font-size: 0.7rem;"><?= ucfirst(session()->get('role') ?? 'Vendedor') ?></div>
                     </div>
                     <div class="user-avatar shadow-sm">
-                        <?= substr(session()->get('name') ?? 'U', 0, 1) ?>
+                        <?= esc(substr(session()->get('name') ?? 'U', 0, 1)) ?>
                     </div>
                 </div>
                 <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2">

@@ -155,7 +155,7 @@
                                 <span class="small text-muted">Solo jefaturas pueden firmar para cerrar definitivamente el ticket.</span>
                             </div>
                             <!-- Verificamos si el usuario actual es un manager/admin para dejarle firmar -->
-                            <?php if(in_array(session()->get('role'), ['admin', 'manager'])): ?>
+                            <?php if(service('authorization')->can('operaciones.firmar')): ?>
                                 <div class="form-check form-switch fs-5">
                                     <input class="form-check-input" type="checkbox" role="switch" name="firmar_ticket" id="firmarSwitch" value="1">
                                     <label class="form-check-label fs-6 mt-1" for="firmarSwitch">Aprobar y Firmar Cierre</label>

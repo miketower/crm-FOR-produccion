@@ -10,20 +10,6 @@ class Vacantes extends BaseController
             return redirect()->to('/');
         }
 
-        $userEmail = session()->get('email');
-        $userRole  = session()->get('role');
-
-        // Lista de correos con acceso explícito a vacantes
-        $usuariosVacantes = [
-            'danya.cruz@forhumancapital.mx',
-            'carlos.sarmiento@forhumancapital.mx'
-        ];
-
-        // Si no es Admin ni está en la lista autorizada, se niega el acceso
-        if ($userRole !== 'admin' && !in_array($userEmail, $usuariosVacantes)) {
-            return redirect()->to('/')->with('error', 'No tienes permisos para acceder al módulo de vacantes.');
-        }
-
         return null;
     }
 

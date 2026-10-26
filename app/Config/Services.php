@@ -19,6 +19,14 @@ use CodeIgniter\Config\BaseService;
  */
 class Services extends BaseService
 {
+    public static function authorization(bool $getShared = true): \App\Libraries\Authorization
+    {
+        if ($getShared) {
+            return static::getSharedInstance('authorization');
+        }
+        return new \App\Libraries\Authorization(\Config\Database::connect());
+    }
+
     /*
      * public static function example($getShared = true)
      * {

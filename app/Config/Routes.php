@@ -23,8 +23,13 @@ $routes->post('dashboard/updateStage', 'Dashboard::updateStage');
 // RUTAS DE USUARIOS
 $routes->get('usuarios', 'Usuarios::index');
 $routes->get('usuarios/nuevo', 'Usuarios::nuevo');
-$routes->post('usuarios/guardar', 'Usuarios::guardar');
-$routes->get('usuarios/eliminar/(:num)', 'Usuarios::eliminar/$1');
+$routes->post('usuarios/guardar', 'Usuarios::guardar', ['filter' => 'csrf']);
+$routes->post('usuarios/eliminar/(:num)', 'Usuarios::eliminar/$1', ['filter' => 'csrf']);
+$routes->get('usuarios/accesos', 'Accesos::index');
+$routes->post('usuarios/accesos/usuario/(:num)', 'Accesos::guardarUsuario/$1', ['filter' => 'csrf']);
+$routes->post('usuarios/accesos/roles', 'Accesos::guardarRol', ['filter' => 'csrf']);
+$routes->post('usuarios/accesos/roles/(:num)', 'Accesos::guardarRol/$1', ['filter' => 'csrf']);
+$routes->get('sin-acceso', 'Auth::sinAcceso');
 // PERFIL DE USUARIO
 $routes->get('perfil', 'Perfil::index');
 $routes->post('perfil/actualizar', 'Perfil::actualizar');

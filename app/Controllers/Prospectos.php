@@ -96,24 +96,14 @@ class Prospectos extends BaseController
             $builder->where('prospects.classification_group', $grupo);
         }
         
-       // --- INICIO: FILTRO DE SEGURIDAD POR USUARIO Y PERMISOS ESPECÍFICOS ---
-       $userEmailSession = session()->get('email');
-
-       if (session()->get('role') !== 'admin') {
-           if ($userEmailSession === 'danya.cruz@forhumancapital.mx') {
-               // Danya puede ver TODOS los perfilamientos (no aplicamos filtro restrictivo de creador)
-           } 
-           elseif ($userEmailSession === 'david.zapata@forhumancapital.mx' || session()->get('role') === 'commercial_rep') {
-               // David Zapata solo debe ver los perfilamientos que sean de tipo "Optimización"
-               $builder->where('service_types.name', 'Optimización');
-           } 
-           else {
-               // Resto de usuarios normales: solo ven lo que ellos crearon
-               $builder->where('prospects.created_by', session()->get('id'));
-           }
-       }
-        // --- FIN: FILTRO DE SEGURIDAD POR USUARIO ---
-        
+        $access = service('authorization');
+        if (!$access->can('prospectos.ver_todos')) {
+            if ($access->can('prospectos.ver_optimizacion')) {
+                $builder->where('service_types.name', 'Optimización');
+            } else {
+                $builder->where('prospects.created_by', session()->get('id'));
+            }
+        }
         // --- FIN DE NUEVOS FILTROS BACKEND ---
 
         $builder->orderBy('prospects.created_at', 'DESC');

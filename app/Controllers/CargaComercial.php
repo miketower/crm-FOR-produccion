@@ -4,20 +4,6 @@ namespace App\Controllers;
 
 class CargaComercial extends BaseController
 {
-    /**
-     * Mapeo de correo a canal comercial
-     */
-    private function obtenerCanalPorEmail($email)
-    {
-        $mapa = [
-            'danya.cruz@forhumancapital.mx'   => 'Soluciones',
-            'samuel.nunez@theblancgroup.com'  => 'Optimización',
-            'alicia.gutierrez@forhumancapital.mx' => 'Otros',
-        ];
-
-        return $mapa[$email] ?? null;
-    }
-
     public function index()
     {
         if (!session()->get('isLoggedIn')) {
@@ -26,10 +12,13 @@ class CargaComercial extends BaseController
 
         $db = \Config\Database::connect();
         $userEmail = session()->get('email');
-        $userRole  = session()->get('role');
 
-        $canalAsignado = $this->obtenerCanalPorEmail($userEmail);
-        $esAdmin = ($userRole === 'admin' || !$canalAsignado);
+        $canalAsignado = service('authorization')->user()['commercial_channel'];
+        $esAdmin = service('authorization')->can('carga.todos_canales');
+
+        if (!$esAdmin && !$canalAsignado) {
+            return $this->response->setStatusCode(403)->setBody('Solicita a un administrador que asigne tu canal comercial.');
+        }
 
         // Consultamos el historial reciente
         $builder = $db->table('capturas_comerciales')
@@ -62,11 +51,13 @@ class CargaComercial extends BaseController
 
         $db = \Config\Database::connect();
         $userEmail = session()->get('email');
-        $userRole  = session()->get('role');
 
-        $canalAsignado = $this->obtenerCanalPorEmail($userEmail);
-        $esAdmin = ($userRole === 'admin' || !$canalAsignado);
+        $canalAsignado = service('authorization')->user()['commercial_channel'];
+        $esAdmin = service('authorization')->can('carga.todos_canales');
 
+        if (!$esAdmin && !$canalAsignado) {
+            return $this->response->setStatusCode(403)->setBody('Solicita a un administrador que asigne tu canal comercial.');
+        }
         if (!$esAdmin && $canalAsignado) {
             $canalFinal = $canalAsignado;
         } else {

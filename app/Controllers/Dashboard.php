@@ -10,17 +10,6 @@ class Dashboard extends BaseController
             return redirect()->to('/');
         }
 
-        // REDIRECCIÓN AUTOMÁTICA PARA CAPTURADORES
-        $emailsCaptura = [
-            'danya.cruz@forhumancapital.mx',
-            'samuel.nunez@theblancgroup.com',
-            'alicia.gutierrez@forhumancapital.mx'
-        ];
-
-        if (in_array(session()->get('email'), $emailsCaptura)) {
-            return redirect()->to('/carga-comercial');
-        }
-        
         $db = \Config\Database::connect();
         $q = $this->request->getVar('q');
         if (!$q) { $q = '4'; }

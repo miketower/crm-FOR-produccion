@@ -20,6 +20,7 @@ class Filters extends BaseConfig
      */
     public array $aliases = [
         'csrf'          => CSRF::class,
+        'access'        => \App\Filters\AccessFilter::class,
         'toolbar'       => DebugToolbar::class,
         'honeypot'      => Honeypot::class,
         'invalidchars'  => InvalidChars::class,
@@ -34,6 +35,7 @@ class Filters extends BaseConfig
      */
     public array $globals = [
         'before' => [
+            'access',
             // 'honeypot',
             // 'csrf',
             // 'invalidchars',

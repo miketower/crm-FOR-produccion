@@ -10,15 +10,6 @@ class DirectorioFormularios extends BaseController
             return redirect()->to('/');
         }
 
-        $userEmail = session()->get('email');
-        $userRole  = session()->get('role');
-
-        // Seguridad: Solo Victoria o usuarios con rol 'admin' pueden ingresar
-        $esVictoria = ($userEmail === 'admin@forhuman.com' || $userEmail === 'admin@victoria.com');
-        if (!$esVictoria && $userRole !== 'admin') {
-            return redirect()->to('/dashboard')->with('error', 'No tienes permiso para acceder a este módulo.');
-        }
-
         // Catálogo extraído del archivo Excel
         $formularios = [
             [

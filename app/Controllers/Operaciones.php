@@ -54,7 +54,7 @@ class Operaciones extends BaseController
         $builder->where('DATE(t.created_at) <=', $fechaFin);
 
         // 3. Seguridad: Roles
-        if (session()->get('role') === 'operaciones') {
+        if (!service('authorization')->can('operaciones.ver_todos')) {
             $builder->groupStart()
                     ->where('t.creador_id', session()->get('id'))
                     ->orWhere('t.responsable_id', session()->get('id'))
@@ -161,7 +161,7 @@ public function actualizar($id)
         'tipo_accion'            => $this->request->getPost('tipo_accion')
     ];
 
-    $seFirmo = ($this->request->getPost('firmar_ticket') == '1' && in_array(session()->get('role'), ['admin', 'manager']));
+    $seFirmo = ($this->request->getPost('firmar_ticket') == '1' && service('authorization')->can('operaciones.firmar'));
 
     if ($seFirmo) {
         $dataUpdate['resultado']           = 'logrado';

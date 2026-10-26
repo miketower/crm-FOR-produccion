@@ -74,4 +74,6 @@ class Format extends BaseConfig
     {
         return Services::format()->getFormatter($mime);
     }
+    /** Maximum nesting depth for JSON responses. */
+    public int $jsonEncodeDepth = 512;
 }

@@ -59,7 +59,7 @@ abstract class BaseController extends Controller
         // 2. Llenamos la mochila con las tareas si hay sesión
         $this->viewData['tareasPendientes'] = []; // Inicializamos vacío
         
-        if (session()->get('isLoggedIn')) {
+        if (service('authorization')->can('prospectos.ver')) {
             $this->viewData['tareasPendientes'] = $activityModel->getTareasPendientes(session()->get('id'));
         }
 
@@ -67,12 +67,12 @@ abstract class BaseController extends Controller
         $db = \Config\Database::connect();
 
         // Consultar los próximos 3 eventos (que no han pasado y están pendientes)
-        $eventosProximos = $db->table('eventos')
+        $eventosProximos = service('authorization')->can('eventos.ver') ? $db->table('eventos')
             ->where('estatus', 'Pendiente')
             ->where('fecha_evento >=', date('Y-m-d H:i:s'))
             ->orderBy('fecha_evento', 'ASC')
             ->limit(3)
-            ->get()->getResultArray();
+            ->get()->getResultArray() : [];
 
         // Asegúrate de enviar esta variable a las vistas globalmente
         // (Dependiendo de cómo tengas armado tu BaseController, suele ser algo así):

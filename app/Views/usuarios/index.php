@@ -4,16 +4,17 @@
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h4 class="fw-bold text-dark mb-0">Gestión de Equipo</h4>
+    <a href="<?= base_url('usuarios/accesos') ?>" class="btn btn-outline-primary ms-auto me-2">Roles y accesos</a>
     <a href="<?= base_url('usuarios/nuevo') ?>" class="btn btn-primary shadow-sm">
         <i class="bi bi-person-plus-fill"></i> Nuevo Usuario
     </a>
 </div>
 
 <?php if(session()->getFlashdata('msg')): ?>
-    <div class="alert alert-success"><?= session()->getFlashdata('msg') ?></div>
+    <div class="alert alert-success"><?= esc(session()->getFlashdata('msg')) ?></div>
 <?php endif; ?>
 <?php if(session()->getFlashdata('error')): ?>
-    <div class="alert alert-danger"><?= session()->getFlashdata('error') ?></div>
+    <div class="alert alert-danger"><?= esc(session()->getFlashdata('error')) ?></div>
 <?php endif; ?>
 
 <div class="card shadow border-0">
@@ -43,11 +44,9 @@
                         </div>
                     </td>
                     <td>
-                        <?php if($u['role'] == 'admin'): ?>
-                            <span class="badge bg-dark">Administrador</span>
-                        <?php else: ?>
-                            <span class="badge bg-info text-dark">Vendedor</span>
-                        <?php endif; ?>
+                        <?php foreach ($u['role_names'] as $roleName): ?>
+                            <span class="badge bg-info text-dark"><?= esc($roleName) ?></span>
+                        <?php endforeach; ?>
                     </td>
                     <td>
                         <?php if($u['is_active']): ?>
@@ -60,11 +59,11 @@
                         <?= date('d/m/Y', strtotime($u['created_at'])) ?>
                     </td>
                     <td class="text-end pe-4">
-                        <a href="<?= base_url('usuarios/eliminar/'.$u['id']) ?>" 
-                           class="btn btn-sm btn-outline-danger"
-                           onclick="return confirm('¿Seguro que deseas eliminar a este usuario?');">
-                            <i class="bi bi-trash"></i>
-                        </a>
+                        <a href="<?= base_url('usuarios/accesos') ?>" class="btn btn-sm btn-outline-primary">Configurar accesos</a>
+                        <form class="d-inline" method="post" action="<?= base_url('usuarios/eliminar/' . (int) $u['id']) ?>" onsubmit="return confirm('¿Seguro que deseas eliminar a este usuario?');">
+                            <?= csrf_field() ?>
+                            <button type="submit" class="btn btn-sm btn-outline-danger" aria-label="Eliminar usuario"><i class="bi bi-trash"></i></button>
+                        </form>
                     </td>
                 </tr>
                 <?php endforeach; ?>

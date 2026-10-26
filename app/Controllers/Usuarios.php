@@ -2,87 +2,94 @@
 
 namespace App\Controllers;
 
-use CodeIgniter\Controller;
+use DomainException;
+use InvalidArgumentException;
 
+/** All actions require an active administrator through AccessFilter. */
 class Usuarios extends BaseController
 {
-    // Solo permitimos entrar si es Admin
-    public function initController(\CodeIgniter\HTTP\RequestInterface $request, \CodeIgniter\HTTP\ResponseInterface $response, \Psr\Log\LoggerInterface $logger)
-    {
-        parent::initController($request, $response, $logger);
-        
-        $session = session();
-        if (!$session->get('isLoggedIn')) {
-            header('Location: '.base_url('/'));
-            exit; 
-        }
-        
-        // Bloqueo de seguridad: Si no es admin, lo mandamos al dashboard
-        if ($session->get('role') !== 'admin') {
-            header('Location: '.base_url('prospectos'));
-            exit;
-        }
-    }
-
-    // 1. LISTAR USUARIOS
     public function index()
     {
-        $db = \Config\Database::connect();
-        // Traemos todos los usuarios (menos los borrados soft-delete si tuvieras)
-        $usuarios = $db->table('users')->get()->getResultArray();
-
-        $data = array_merge($this->viewData, [
-            'usuarios' => $usuarios
-        ]);
-
-        return view('usuarios/index', $data);
+        $usuarios = \Config\Database::connect()->table('users')->select('id, full_name, email, role, is_active, created_at')->where('deleted_at', null)->get()->getResultArray();
+        $roles = array_column(service('authorization')->roleCatalog(), 'name', 'id');
+        foreach ($usuarios as &$usuario) {
+            $usuario['role_names'] = array_map(static fn($id) => $roles[$id], service('authorization')->roleIds((int) $usuario['id']));
+        }
+        return view('usuarios/index', array_merge($this->viewData, ['usuarios' => $usuarios]));
     }
 
-    // 2. MOSTRAR FORMULARIO NUEVO
     public function nuevo()
     {
-        return view('usuarios/crear');
+        return view('usuarios/crear', array_merge($this->viewData, ['roles' => service('authorization')->roleCatalog(), 'catalogo' => config(\Config\Access::class)]));
     }
 
-    // 3. GUARDAR EN BASE DE DATOS
     public function guardar()
     {
-        $db = \Config\Database::connect();
-        
-        // Validamos que el email no exista ya
-        $email = $this->request->getPost('email');
-        $existe = $db->table('users')->where('email', $email)->countAllResults();
-
-        if ($existe > 0) {
-            return redirect()->back()->with('error', 'Ese correo ya está registrado.');
+        if (!$this->validateData($this->request->getPost(), [
+            'full_name' => 'required|max_length[100]', 'email' => 'required|valid_email|max_length[100]|is_unique[users.email]',
+            'password' => 'required|min_length[8]|max_length[255]',
+        ])) {
+            // Do not flash the submitted password back into the session or form.
+            return redirect()->to('usuarios/nuevo')->with('error', implode(' ', $this->validator->getErrors()));
         }
-
-        // Preparamos los datos
-        $data = [
-            'full_name'     => $this->request->getPost('full_name'),
-            'email'         => $email,
-            // Encriptamos la contraseña
-            'password_hash' => password_hash($this->request->getPost('password'), PASSWORD_DEFAULT),
-            'role'          => $this->request->getPost('role'),
-            'is_active'     => 1,
-            'created_at'    => date('Y-m-d H:i:s')
-        ];
-
-        $db->table('users')->insert($data);
-
-        return redirect()->to('/usuarios')->with('msg', 'Usuario creado correctamente.');
+        $access = service('authorization');
+        try {
+            $ids = $access->validateRoleIds($this->request->getPost('roles') ?? []);
+            $channel = $this->request->getPost('commercial_channel') ?: null;
+            if (!in_array($channel, [null, 'Soluciones', 'Optimización', 'Otros'], true)) {
+                throw new InvalidArgumentException('Selecciona un canal válido.');
+            }
+        } catch (InvalidArgumentException $exception) {
+            return redirect()->to('usuarios/nuevo')->with('error', $exception->getMessage());
+        }
+        $db = \Config\Database::connect();
+        $db->transBegin();
+        try {
+            $db->table('users')->insert([
+                'full_name' => trim($this->request->getPost('full_name')), 'email' => trim($this->request->getPost('email')),
+                'password_hash' => password_hash($this->request->getPost('password'), PASSWORD_DEFAULT),
+                'role' => $access->legacyRole($ids), 'is_active' => 1, 'created_at' => date('Y-m-d H:i:s'),
+            ]);
+            $access->setUserRoles((int) $db->insertID(), $ids, $channel);
+            if (!$db->transStatus()) {
+                throw new DomainException('No fue posible crear el usuario.');
+            }
+            $db->transCommit();
+        } catch (\Throwable $exception) {
+            $db->transRollback();
+            throw $exception;
+        }
+        return redirect()->to('usuarios')->with('msg', 'Usuario creado con los accesos seleccionados.');
     }
 
-    // 4. ELIMINAR USUARIO
     public function eliminar($id)
     {
-        $db = \Config\Database::connect();
-        // Evitar que el admin se borre a sí mismo
-        if($id == session()->get('id')) {
-            return redirect()->back()->with('error', 'No puedes eliminar tu propia cuenta.');
+        $id = (int) $id;
+        if ($id === (int) session()->get('id')) {
+            return redirect()->to('usuarios')->with('error', 'No puedes eliminar tu propia cuenta.');
         }
-
-        $db->table('users')->where('id', $id)->delete();
-        return redirect()->back()->with('msg', 'Usuario eliminado.');
+        $db = \Config\Database::connect();
+        $db->transBegin();
+        try {
+            if ($db->DBDriver === 'MySQLi') {
+                $db->query('SELECT id FROM ' . $db->prefixTable('access_roles') . " WHERE slug = 'admin' FOR UPDATE");
+            }
+            $admin = (int) $db->table('access_roles')->where('slug', 'admin')->get()->getRow('id');
+            if (in_array($admin, service('authorization')->roleIds($id), true)
+                && $db->table('access_user_roles ur')->join('users u', 'u.id = ur.user_id')->where('ur.role_id', $admin)->where('u.is_active', 1)->where('u.deleted_at', null)->countAllResults() <= 1) {
+                $db->transRollback();
+                return redirect()->to('usuarios')->with('error', 'Debe permanecer al menos un administrador activo.');
+            }
+            $db->table('access_user_roles')->where('user_id', $id)->delete();
+            $db->table('users')->where('id', $id)->delete();
+            if (!$db->transStatus()) {
+                throw new DomainException('No fue posible eliminar el usuario.');
+            }
+            $db->transCommit();
+        } catch (\Throwable $exception) {
+            $db->transRollback();
+            throw $exception;
+        }
+        return redirect()->to('usuarios')->with('msg', 'Usuario eliminado.');
     }
 }
