@@ -125,6 +125,63 @@ final class CotizadorTest extends CIUnitTestCase
         }
     }
 
+    public static function proemPlans(): array
+    {
+        return [['Proem', false], ['Proem', true], ['Mixto', false], ['Mixto', true]];
+    }
+
+    /** @dataProvider proemPlans */
+    public function testProemGrossAndCommissionsSurviveCreateEditAndSave(string $plan, bool $withEmployeeCommission): void
+    {
+        $employeeCommission = $withEmployeeCommission ? 1000 : 0;
+        $payload = [
+            'nombre_cliente' => 'PROEM Excel', 'fecha_propuesta' => '2026-10-28',
+            'plan_integral' => $plan, 'comision_porcentaje' => 8, 'periodo_pago' => 'Mensual',
+            'base_100' => 466568, 'neto_100' => 382095, 'carga_100' => 127156.75,
+            'bruto_proem' => 234389, 'neto_proem' => 207784, 'carga_proem' => 68314.14,
+            'comision_100' => $employeeCommission, 'comision_100_afecta' => (int) $withEmployeeCommission,
+            'comision_empleado_proem' => $employeeCommission,
+            'excedente' => 174311 + $employeeCommission,
+            'comision_for_monto' => $withEmployeeCommission ? 14024.88 : 13944.88,
+            'total_100' => $withEmployeeCommission ? 594974.75 : 593724.75,
+            'total_proem' => $withEmployeeCommission ? 492039.02 : 490959.02,
+            'ahorro_mensual' => $withEmployeeCommission ? 102935.73 : 102765.73,
+        ];
+        $this->withSession(['id' => 1, 'name' => 'Tester', 'isLoggedIn' => true]);
+        $response = $this->withBodyFormat('json')->post('cotizador/guardar', $payload);
+        $response->assertJSONFragment(['status' => 'success']);
+        $id = json_decode($response->getJSON(), true)['id'];
+
+        $response = $this->get('cotizador/editar/' . $id);
+        $response->assertOK();
+        $html = $response->getBody();
+        $this->assertInputValue($html, 'bruto_proem', '234389');
+        $this->assertInputValue($html, 'neto_proem', '207784');
+        $this->assertInputValue($html, 'comision_100', (string) $employeeCommission);
+        $this->assertInputValue($html, 'comision_empleado_proem', (string) $employeeCommission);
+        $this->assertStringContainsString('id="comision_for_monto"', $html);
+        preg_match('/<input\b[^>]*id="comision_100_afecta_carga"[^>]*>/', $html, $checkbox);
+        $this->assertNotEmpty($checkbox);
+        $this->assertSame($withEmployeeCommission, strpos($checkbox[0], 'checked') !== false);
+
+        $payload['bruto_proem'] += 100;
+        $payload['total_proem'] += 100;
+        $payload['ahorro_mensual'] -= 100;
+        $response = $this->withBodyFormat('json')->post('cotizador/actualizar/' . $id, $payload);
+        $response->assertJSONFragment(['status' => 'success']);
+        $row = $this->connection->table('detalle_proem')->where('propuesta_id', $id)->get()->getRowArray();
+        $this->assertSame(1, $this->connection->table('detalle_proem')->countAllResults());
+        foreach (['bruto_proem', 'neto_proem', 'carga_proem', 'comision_100', 'comision_100_afecta',
+            'comision_empleado_proem', 'excedente', 'total_proem', 'ahorro_mensual'] as $column) {
+            $this->assertEquals($payload[$column], $row[$column], $column);
+        }
+        $this->assertEquals($payload['comision_for_monto'], $row['comision_monto']);
+        $this->assertEquals($payload['total_100'], $row['costo_op_100']);
+        $response = $this->get('cotizador/ver/' . $id);
+        $response->assertOK();
+        $this->assertStringContainsString('$' . number_format($payload['total_proem'], 2), $response->getBody());
+    }
+
     private function assertInputValue(string $html, string $id, string $value): void
     {
         $this->assertMatchesRegularExpression('/<input\b[^>]*id="' . $id . '"[^>]*value="' . preg_quote($value, '/') . '"/', $html);

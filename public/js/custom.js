@@ -342,8 +342,8 @@ window.calcularProemFinal = function() {
         comisionFORInput.value = comisionFOR > 0 ? comisionFOR.toFixed(2) : '';
     }
 
-    // C) TOTAL PROEM (Excluyendo Salario Bruto, estilo Excel)
-    const totalProem = cargaProem + excedenteTotalTrabajador + comisionFOR;
+    // C) TOTAL PROEM = Bruto + Excedente Total + Carga Social + Comisión FOR
+    const totalProem = brutoProem + excedenteTotalTrabajador + cargaProem + comisionFOR;
 
     // --- 3. AHORROS ---
     const ahorroMensual = total100 - totalProem;
@@ -756,7 +756,7 @@ window.fijarOpcionActual = function() {
             comision_for: comisionFOR,
 
             total_100: base100 + totalCarga100Efectiva + comision100Emp,
-            total_for: cargaProem + excedenteTotal + comisionFOR 
+            total_for: brutoProem + excedenteTotal + cargaProem + comisionFOR
         };
     }
 
@@ -917,7 +917,7 @@ window.generarPDFMembretado = function(payload) {
             let oBruto = 0, oNeto = 0, oComisionEmp = 0, oExcedenteNeto = 0, oCarga = 0, oComisionFOR = 0, oTotal = 0;
 
             if(opc.proem) {
-                oBruto = 0; 
+                oBruto = opc.proem.bruto_for;
                 oNeto = opc.proem.neto_for; 
                 oComisionEmp = opc.proem.comision_emp_proem;
                 oExcedenteNeto = Math.max(0, opc.proem.neto_100 - opc.proem.neto_for); 

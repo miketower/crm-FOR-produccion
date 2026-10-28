@@ -292,6 +292,16 @@
                             <label class="small text-muted">3. CARGA SOCIAL</label>
                             <input type="number" id="carga_100" class="form-control bg-light" value="<?= esc($proem['carga_100'] ?? '') ?>" oninput="calcularProemFinal()">
                         </div>
+                        <div class="mb-3 p-2 bg-light rounded border">
+                            <label class="small text-dark fw-bold">4. COMISIÓN EMPLEADO (100% IMSS) ($)</label>
+                            <input type="number" id="comision_100" class="form-control" value="<?= esc($proem['comision_100'] ?? '') ?>" placeholder="0.00" oninput="calcularProemFinal()">
+                            <div class="form-check form-switch mt-2">
+                                <input class="form-check-input" type="checkbox" id="comision_100_afecta_carga" <?= !empty($proem['comision_100_afecta']) ? 'checked' : '' ?> onchange="calcularProemFinal()">
+                                <label class="form-check-label small text-muted fw-bold" for="comision_100_afecta_carga">
+                                    ¿Afecta Carga Social / ISR?
+                                </label>
+                            </div>
+                        </div>
                         <div class="p-3 bg-light rounded text-center mt-4 border">
                             <p class="small text-muted mb-1 fw-bold">COSTO 100% IMSS</p>
                             <h4 id="total_100_display" class="mb-0 text-dark fw-bold">$ 0.00</h4>
@@ -311,6 +321,20 @@
                         <div class="mb-3">
                             <label class="small text-muted">3. CARGA SOCIAL (PROEM)</label>
                             <input type="number" id="carga_proem" class="form-control" value="<?= esc($proem['carga_proem'] ?? '') ?>" oninput="calcularProemFinal()">
+                        </div>
+                        <div class="mb-3 p-2 bg-light rounded border">
+                            <label class="small text-dark fw-bold">4. COMISIÓN / EXCEDENTE EMPLEADO ($)</label>
+                            <input type="number" id="comision_empleado_proem" class="form-control" value="<?= esc($proem['comision_empleado_proem'] ?? '') ?>" placeholder="0.00" oninput="calcularProemFinal()">
+                            <span class="small text-muted d-block mt-1" style="font-size: 0.75rem;">
+                                *Monto adicional para el trabajador; la diferencia entre sueldos netos se calcula automáticamente. Si no hay comisión adicional, captura 0.
+                            </span>
+                        </div>
+                        <div class="mb-3 p-2 bg-primary bg-opacity-10 rounded border border-primary">
+                            <label class="small text-primary fw-bold">5. COMISIÓN FOR (GANANCIA) ($)</label>
+                            <input type="number" id="comision_for_monto" class="form-control bg-light" placeholder="Calculado automáticamente" readonly>
+                            <span class="small text-muted d-block mt-1" style="font-size: 0.75rem;">
+                                *Se calcula usando el % de arriba sobre el Excedente Total.
+                            </span>
                         </div>
                         <div class="p-3 bg-primary bg-opacity-10 rounded text-center mt-4 border border-primary">
                             <p class="small text-primary mb-1 fw-bold">TOTAL PROEM</p>

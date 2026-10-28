@@ -28,7 +28,8 @@ No MySQL service, application user, production credentials, or `.env` file is
 needed to run the suite.
 
 The quotation regression tests cover creation, editing, and persistence for
-Servicio Especializado and Mixto, including the gross salary, net salary, and surplus.
+PROEM, Servicio Especializado and Mixto, including gross and net salaries, surplus,
+employee commissions and the IMSS social-cost checkbox.
 The browser calculations and PDF option data have a separate dependency-free
 Node.js suite (Node 18+):
 
@@ -36,8 +37,14 @@ Node.js suite (Node 18+):
 node --test tests/js/cotizador.test.js
 ```
 
-It checks that Total FOR includes the gross FOR salary, surplus, social cost, and
-FOR commission, while preserving the existing PROEM, surplus, and commission formulas.
+It checks that both PROEM and Servicio Especializado totals include the gross FOR
+salary, surplus, social cost, and FOR commission in the screen and PDF options.
+The PROEM Excel example produces a total of $490,959.02 and monthly savings of
+$102,765.73. With the visible cent-rounded inputs its annual savings are
+$1,233,188.76; the example spreadsheet displays $1,233,188.80.
+Employee-commission autofill, explicit zero, the 25% IMSS social-cost adjustment,
+and the existing commission bases (PROEM surplus vs. Specialized IMSS net) are
+tested separately.
 
 The suite covers database reads and soft deletion, session storage, and basic
 application configuration. Run a subset with:

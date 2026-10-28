@@ -311,7 +311,7 @@
                         <label class="small text-dark fw-bold">4. COMISIÓN / EXCEDENTE EMPLEADO ($)</label>
                         <input type="number" id="comision_empleado_proem" class="form-control" placeholder="0.00" oninput="calcularProemFinal()">
                         <span class="small text-muted d-block mt-1" style="font-size: 0.75rem;">
-                            *Monto de comisión/excedente que recibe el trabajador por fuera.
+                            *Monto adicional para el trabajador; la diferencia entre sueldos netos se calcula automáticamente. Si no hay comisión adicional, captura 0.
                         </span>
                     </div>
 

@@ -105,12 +105,12 @@ test('Mixed plan preserves PROEM, employee commission and its social charge', ()
     assert.equal(element('comision_empleado_proem').value, '1000.00');
     assert.equal(element('excedente_val').innerText, currency(9000));
     assert.equal(element('total_100_display').innerText, currency(40250));
-    assert.equal(element('total_proem_display').innerText, currency(15450));
-    assert.equal(element('ahorro_mensual_val').innerText, currency(24800));
+    assert.equal(element('total_proem_display').innerText, currency(35450));
+    assert.equal(element('ahorro_mensual_val').innerText, currency(4800));
     const option = context.opcionesPropuesta[0];
     assert.equal(option.proem.total_100, 40250);
     assert.equal(option.proem.comision_for, 450);
-    assert.equal(option.proem.total_for, 15450);
+    assert.equal(option.proem.total_for, 35450);
     assert.equal(option.esp.total_for, 35250);
 });
 
@@ -121,4 +121,78 @@ test('PDF automatically captures the corrected specialized option when none is p
     assert.equal(context.opcionesPropuesta[0].esp.total_for, 35250);
     const totalRow = element('pdf_mega_body').innerHTML.split('</tr>').find(row => row.includes('Costo Total Mensual'));
     assert.ok(totalRow.includes(currency(35250)));
+});
+
+const proemExcel = {
+    base_100: 466568, neto_100: 382095, carga_100: 127156.75,
+    bruto_proem: 234389, neto_proem: 207784, carga_proem: 68314.14,
+    comision_100: 0, comision_empleado_proem: 0, comision_porcentaje: 8,
+};
+
+test('PROEM matches the supplied Excel in screen, pinned PDF and saved payloads', async () => {
+    const { context, element, requests } = cotizador('Proem', proemExcel);
+    context.calcularProemFinal();
+    assert.equal(element('total_100_display').innerText, currency(593724.75));
+    assert.equal(element('excedente_val').innerText, currency(174311));
+    assert.equal(element('comision_monto_val').innerText, currency(13944.88));
+    assert.equal(element('total_proem_display').innerText, currency(490959.02));
+    assert.equal(element('ahorro_mensual_val').innerText, currency(102765.73));
+    assert.equal(element('ahorro_anual_val').innerText, currency(1233188.76));
+    context.fijarOpcionActual();
+    const option = context.opcionesPropuesta[0].proem;
+    assert.ok(Math.abs(option.total_for - 490959.02) < 0.000001);
+    assert.equal(option.bruto_for, 234389);
+    context.generarPDFMembretado({});
+    const rows = element('pdf_mega_body').innerHTML.split('</tr>');
+    for (const [label, amount] of [
+        ['Salarios Brutos', 234389], ['Costo Total Mensual', 490959.02],
+        ['Ahorro Mensual', 102765.73], ['Ahorro Anual', 1233188.76],
+    ]) {
+        assert.ok(rows.find(row => row.includes(label)).includes(currency(amount)), label);
+    }
+    await context.guardarPropuestaBD();
+    element('propuesta_id').value = '42';
+    await context.actualizarCotizacionExistente();
+    assert.equal(requests.length, 2);
+    for (const { payload } of requests) {
+        assert.equal(payload.bruto_proem, 234389);
+        assert.equal(payload.excedente, 174311);
+        assert.equal(payload.comision_for_monto, 13944.88);
+        assert.equal(payload.total_proem, 490959.02);
+        assert.equal(payload.ahorro_mensual, 102765.73);
+    }
+});
+
+for (const [name, overrides, affectsSocialCost, surplus, commission, baseline, total] of [
+    ['employee commission with social cost', { comision_100: 1000, comision_empleado_proem: 1000 }, true, 175311, 14024.88, 594974.75, 492039.02],
+    ['employee commission without social cost', { comision_100: 1000, comision_empleado_proem: 500 }, false, 174811, 13984.88, 594724.75, 491499.02],
+    ['empty employee commission copies IMSS', { comision_100: 1000, comision_empleado_proem: '' }, false, 175311, 14024.88, 594724.75, 492039.02],
+    ['explicit zero is preserved', { comision_100: 1000, comision_empleado_proem: 0 }, false, 174311, 13944.88, 594724.75, 490959.02],
+    ['higher net does not create negative surplus', { neto_proem: 400000 }, false, 0, 0, 593724.75, 302703.14],
+    ['zero percentage', { comision_porcentaje: 0 }, false, 174311, 0, 593724.75, 477014.14],
+]) {
+    test(`PROEM preserves commission rules: ${name}`, () => {
+        const { context, element } = cotizador('Proem', { ...proemExcel, ...overrides });
+        element('comision_100_afecta_carga').checked = affectsSocialCost;
+        context.calcularProemFinal();
+        context.fijarOpcionActual();
+        const option = context.opcionesPropuesta[0].proem;
+        assert.equal(element('excedente_val').innerText, currency(surplus));
+        assert.equal(element('comision_monto_val').innerText, currency(commission));
+        assert.equal(element('total_100_display').innerText, currency(baseline));
+        assert.equal(element('total_proem_display').innerText, currency(total));
+        assert.equal(option.excedente, surplus);
+        assert.ok(Math.abs(option.comision_for - commission) < 0.000001);
+        assert.ok(Math.abs(option.total_for - total) < 0.000001);
+        assert.equal(option.total_100, baseline);
+    });
+}
+
+test('Unpinned PROEM PDF captures gross and corrected total automatically', () => {
+    const { context, element } = cotizador('Proem', proemExcel);
+    context.generarPDFMembretado({});
+    assert.equal(context.opcionesPropuesta.length, 1);
+    const rows = element('pdf_mega_body').innerHTML.split('</tr>');
+    assert.ok(rows.find(row => row.includes('Salarios Brutos')).includes(currency(234389)));
+    assert.ok(rows.find(row => row.includes('Costo Total Mensual')).includes(currency(490959.02)));
 });
