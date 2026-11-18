@@ -31,7 +31,7 @@
             <details class="card border-0 shadow-sm mb-3">
                 <summary class="card-header bg-white p-3"><?= esc($role['name']) ?></summary>
                 <?php if ($role['slug'] === 'admin'): ?>
-                    <div class="card-body">El administrador tiene acceso total. Este perfil está protegido y no se pueden recortar sus permisos.</div>
+                    <div class="card-body">El administrador tiene acceso general a los módulos. Algunas vistas privadas se autorizan por cuenta. Este perfil está protegido y no se pueden recortar sus permisos generales.</div>
                 <?php else: ?>
                     <form class="card-body" method="post" action="<?= base_url('usuarios/accesos/roles/' . (int) $role['id']) ?>">
                         <?= csrf_field() ?>

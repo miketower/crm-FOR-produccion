@@ -16,6 +16,7 @@ $routes->get('prospectos', 'Prospectos::index'); // URL: localhost:8080/prospect
 $routes->get('importar', 'Importar::index');
 $routes->post('importar/procesar', 'Importar::procesar');
 $routes->get('dashboard', 'Dashboard::index');
+$routes->get('matriz-full-skills', 'MatrizFullSkills::index');
 $routes->get('prospectos/editar/(:num)', 'Prospectos::editar/$1');
 $routes->post('prospectos/actualizar/(:num)', 'Prospectos::actualizar/$1');
 $routes->get('dashboard/pipeline', 'Dashboard::pipeline');

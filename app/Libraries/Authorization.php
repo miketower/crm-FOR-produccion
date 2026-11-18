@@ -65,6 +65,9 @@ class Authorization
         if (!$this->currentUser) {
             return false;
         }
+        if ($permission === 'matriz_full_skills.ver') {
+            return $this->canViewFullSkills();
+        }
         if ($permission === 'usuarios.administrar') {
             return $this->isAdmin();
         }
@@ -72,6 +75,21 @@ class Authorization
             return false;
         }
         return $this->isAdmin() || isset($this->permissions[$permission]);
+    }
+
+    private function canViewFullSkills(): bool
+    {
+        if (!$this->db->tableExists('full_skills_viewers')) {
+            return false;
+        }
+        $emails = [
+            'luciana' => 'luciana.osuna@forhumancapital.mx',
+            'jorge' => 'jorgemarioblanco@forhumancapital.mx',
+            'victoria' => 'victoria.torres@forhumancapital.mx',
+        ];
+        $slot = $this->db->table('full_skills_viewers')->select('slot')
+            ->where('user_id', (int) $this->currentUser['id'])->get()->getRow('slot');
+        return isset($emails[$slot]) && strtolower(trim($this->currentUser['email'])) === $emails[$slot];
     }
 
     public function menu(): array
@@ -87,6 +105,9 @@ class Authorization
                     $groups[$group][] = ['label' => 'Pantalla TV', 'url' => 'vacantes/tv', 'icon' => 'bi-tv', 'blank' => true];
                 }
             }
+        }
+        if ($this->can('matriz_full_skills.ver')) {
+            $groups['Estrategia'][] = ['label' => 'Matriz Full Skills', 'url' => 'matriz-full-skills', 'icon' => 'bi-bar-chart-steps'];
         }
         if ($this->isAdmin()) {
             $groups['Configuración'][] = ['label' => 'Equipo / Usuarios', 'url' => 'usuarios', 'icon' => 'bi-people-fill'];

@@ -46,6 +46,7 @@ final class AccessControlTest extends CIUnitTestCase
             'prospect_activities' => ['id INTEGER PRIMARY KEY', 'prospect_id INT', 'user_id INT', 'is_completed INT', 'due_date DATETIME'],
             'eventos' => ['id INTEGER PRIMARY KEY', 'estatus VARCHAR(30)', 'fecha_evento DATETIME'],
             'notificaciones' => ['id INTEGER PRIMARY KEY', 'user_id INT', 'leido INT', 'created_at DATETIME'],
+            'full_skills_viewers' => ['slot VARCHAR(20) PRIMARY KEY', 'user_id INT UNIQUE'],
         ] as $table => $fields) {
             $this->forge->addField($fields);
             $this->forge->createTable($table);
@@ -58,7 +59,7 @@ final class AccessControlTest extends CIUnitTestCase
     protected function tearDown(): void
     {
         $_SESSION = [];
-        foreach (['notificaciones', 'eventos', 'prospect_activities', 'prospects', 'access_user_roles', 'access_role_permissions', 'access_permissions', 'access_roles', 'users'] as $table) {
+        foreach (['full_skills_viewers', 'notificaciones', 'eventos', 'prospect_activities', 'prospects', 'access_user_roles', 'access_role_permissions', 'access_permissions', 'access_roles', 'users'] as $table) {
             $this->forge->dropTable($table, true);
         }
         parent::tearDown();
@@ -228,6 +229,55 @@ final class AccessControlTest extends CIUnitTestCase
         $this->withSession([]);
         $this->get('usuarios/accesos')->assertRedirectTo(base_url('/'));
         $this->post('vacantes/actualizar', ['id' => 1])->assertRedirectTo(base_url('/'));
+    }
+
+    public function testFullSkillsIsRestrictedToTheThreeAssignedAccounts(): void
+    {
+        foreach (['luciana' => [2, 'luciana.osuna@forhumancapital.mx'],
+            'jorge' => [3, 'jorgemarioblanco@forhumancapital.mx'],
+            'victoria' => [4, 'victoria.torres@forhumancapital.mx']] as $slot => [$id, $email]) {
+            $this->connection->table('users')->where('id', $id)->update(['email' => $email]);
+            $this->connection->table('full_skills_viewers')->insert(['slot' => $slot, 'user_id' => $id]);
+        }
+        $this->signIn(1);
+        $this->assertTrue($this->access->isAdmin());
+        $this->assertFalse($this->access->can('matriz_full_skills.ver'));
+        $this->assertNotContains('Matriz Full Skills', array_column(array_merge(...array_values($this->access->menu())), 'label'));
+        $this->withSession(['id' => 1, 'isLoggedIn' => true])->get('matriz-full-skills')->assertStatus(403);
+
+        foreach ([2, 3, 4] as $id) {
+            $this->signIn($id);
+            $this->assertTrue($this->access->can('matriz_full_skills.ver'));
+            $this->assertContains('Matriz Full Skills', array_column(array_merge(...array_values($this->access->menu())), 'label'));
+        }
+        $page = $this->withSession(['id' => 2, 'name' => 'Test user', 'isLoggedIn' => true])->get('matriz-full-skills?perfil=aurora');
+        $page->assertStatus(200);
+        $page->assertSee('Datos de ejemplo');
+        $page->assertSee('Calidad de la cita del canal');
+
+        // Changing or reusing an email must not transfer access to another ID.
+        $this->connection->table('users')->where('id', 2)->update(['email' => 'changed@example.invalid']);
+        $this->connection->table('users')->where('id', 5)->update(['email' => 'luciana.osuna@forhumancapital.mx']);
+        $this->signIn(5);
+        $this->assertFalse($this->access->can('matriz_full_skills.ver'));
+        $this->withSession(['id' => 5, 'isLoggedIn' => true])->get('matriz-full-skills')->assertStatus(403);
+        $this->signIn(2);
+        $this->assertFalse($this->access->can('matriz_full_skills.ver'));
+        $this->connection->table('users')->where('id', 2)->update(['email' => 'luciana.osuna@forhumancapital.mx']);
+        $this->access->refresh();
+        $this->assertTrue($this->access->can('matriz_full_skills.ver'));
+
+        $this->connection->table('users')->where('id', 2)->update(['is_active' => 0]);
+        $this->access->refresh();
+        $this->assertFalse($this->access->can('matriz_full_skills.ver'));
+    }
+
+    public function testFullSkillsFailsClosedWhenItsAccessTableIsMissing(): void
+    {
+        $this->forge->dropTable('full_skills_viewers');
+        $this->signIn(1);
+        $this->assertFalse($this->access->can('matriz_full_skills.ver'));
+        $this->withSession(['id' => 1, 'isLoggedIn' => true])->get('matriz-full-skills')->assertStatus(403);
     }
 
     public function testEveryConfiguredRouteHasAnExplicitAuthorizationPolicy(): void

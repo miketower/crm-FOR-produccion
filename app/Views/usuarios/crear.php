@@ -33,7 +33,7 @@
         preview.replaceChildren();
         if (!selected.length) { preview.textContent = 'Selecciona al menos un rol.'; return; }
         if (selected.some(role => role.slug === 'admin')) {
-            const notice = document.createElement('p'); notice.textContent = 'Administrador: acceso total, incluyendo usuarios y configuración de permisos.'; preview.append(notice);
+            const notice = document.createElement('p'); notice.textContent = 'Administrador: acceso general, incluyendo usuarios y configuración de permisos. Algunas vistas privadas se autorizan por cuenta.'; preview.append(notice);
         }
         const list = document.createElement('ul'); list.className = 'mb-0';
         Object.entries(modules).forEach(([key, module]) => {

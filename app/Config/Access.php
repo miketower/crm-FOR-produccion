@@ -39,6 +39,7 @@ class Access extends BaseConfig
     /** Each public controller action must be classified explicitly. */
     public array $actions = [
         'Dashboard' => ['index' => 'dashboard.ver', 'pipeline' => 'pipeline.ver', 'updateStage' => 'pipeline.modificar'],
+        'MatrizFullSkills' => ['index' => 'matriz_full_skills.ver'],
         'Prospectos' => [
             'index' => 'prospectos.ver', 'perfil' => 'prospectos.ver', 'exportarPDF' => 'prospectos.ver',
             'nuevo' => 'prospectos.modificar', 'guardar' => 'prospectos.modificar', 'editar' => 'prospectos.modificar',
@@ -70,6 +71,7 @@ class Access extends BaseConfig
             $permissions[$key . '.ver'] = $module[0] . ': consultar';
             $permissions[$key . '.modificar'] = $module[0] . ': modificar';
         }
-        return $permissions + $this->scopes;
+        // This private permission is resolved by account ID, not by a role grant.
+        return $permissions + $this->scopes + ['matriz_full_skills.ver' => 'Matriz Full Skills: acceso privado'];
     }
 }

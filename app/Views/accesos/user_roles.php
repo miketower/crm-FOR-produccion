@@ -6,7 +6,7 @@
             <input class="form-check-input me-2 user-role-checkbox" type="checkbox" name="roles[]" value="<?= (int) $role['id'] ?>"
                 <?= in_array((int) $role['id'], $selectedRoles ?? [], true) ? 'checked' : '' ?>>
             <?= esc($role['name']) ?>
-            <?= $role['slug'] === 'admin' ? '<span class="badge bg-dark ms-1">Acceso total y administración de usuarios</span>' : '' ?>
+            <?= $role['slug'] === 'admin' ? '<span class="badge bg-dark ms-1">Acceso general y administración de usuarios</span>' : '' ?>
         </label>
     <?php endforeach; ?>
 </fieldset>
