@@ -168,11 +168,15 @@ class Dashboard extends BaseController
         // =======================================================================================
         
         // 1. Totales Globales (Soluciones NO suma al KPI principal de arriba)
-        $montoVendidoTotalExacto = 679192222.00; // Facturado Total Acumulado 
-        $montoCobradoTotalExacto = 79238791.70;  // Ingreso Bruto Total Acumulado (EXACTO, sin sumar Soluciones aquí)
+        //$montoVendidoTotalExacto = 679192222.00; // Facturado Total Acumulado 
+        //$montoCobradoTotalExacto = 79238791.70;  // Ingreso Bruto Total Acumulado (EXACTO, sin sumar Soluciones aquí)
         
+        // Acumulado anterior + Optimización de octubre.
+        $montoVendidoTotalExacto = 708393425.91;
+        $montoCobradoTotalExacto = 82952322.13;
         // 2. Ingresos Nuevos
-        $ingNuevoExacto          = 2251660.97;   // Ingreso Bruto Nuevo Acumulado
+        //$ingNuevoExacto          = 2251660.97;   // Ingreso Bruto Nuevo Acumulado
+        $ingNuevoExacto = 2428826.96;
         $ingNuevoProyectado      = 3196461.67;   // Ingreso Bruto Nuevo Total Proyectado
         
         // 3. Proyecciones Globales (Sin sumar Soluciones)
@@ -201,10 +205,16 @@ class Dashboard extends BaseController
         $data['dataVendidoCanal']    = [65320155.00, 3073174.00, 13918636.70]; 
         
         // INGRESO BRUTO: Aquí SÍ incluimos los 3.07M de Soluciones para que salga en su rebanada de pastel
-        $data['dataCobradoCanal']    = [65320154.59, 3073174.00, 13918639.73]; 
+        //$data['dataCobradoCanal']    = [65320154.59, 3073174.00, 13918639.73]; 
+        $data['dataCobradoCanal'] = [
+            69033685.02, // Optimización, incluyendo octubre
+            3073174.00,  // Soluciones
+            13918639.73  // Otros
+        ];
         
         // Porcentajes de contribución (Ajustado)
-        $data['contribucionCanales'] = [65.3, 3.1, 13.9];
+        // $data['contribucionCanales'] = [65.3, 3.1, 13.9];
+        $data['contribucionCanales'] = [69.0, 3.1, 13.9];
         
         $data['dataCitas']          = $citas;
         $data['dataPropuestas']     = $propuestas;
