@@ -67,7 +67,8 @@ $routes->post('socios/guardar', 'Socios::guardar');
 
 // Rutas de Cierre de Mes dentro de Socios
 $routes->get('socios/cierre-mes', 'Socios::cierreMes');
-$routes->post('socios/guardar-seguimiento', 'Socios::guardarSeguimiento');
+$routes->post('socios/guardar-seguimiento', 'Socios::guardarSeguimiento', ['filter' => 'csrf']);
+$routes->post('socios/actualizar-seguimiento/(:num)', 'Socios::actualizarSeguimiento/$1', ['filter' => 'csrf']);
 // Módulo de Ventas / Flujos
 $routes->get('ventas', 'Ventas::index');
 $routes->post('ventas/guardar', 'Ventas::guardar');

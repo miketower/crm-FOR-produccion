@@ -5,22 +5,49 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <div>
-        <h4 class="fw-bold text-dark mb-0">Cierre de Mes - Asociados FOR</h4>
-        <small class="text-muted">Registro semanal de resultados comerciales y de asociados</small>
-    </div>
-    <form action="<?= base_url('socios/cierre-mes') ?>" method="GET" class="d-flex align-items-center gap-2">
-        <input type="month" name="mes" class="form-control" value="<?= esc($mesAnio) ?>" onchange="this.form.submit()">
-    </form>
-</div>
+<?php
+$cierreUrl = base_url('socios/cierre-mes');
+$queryRango = http_build_query(['desde' => $fechaInicio, 'hasta' => $fechaFin]);
+$cierreRangoUrl = $cierreUrl . '?' . $queryRango;
+$indicadores = [
+    'citas_realizadas' => 'Citas realizadas',
+    'citas_programadas' => 'Citas programadas',
+    'propuestas' => 'Propuestas',
+    'cierres' => 'Cierres',
+    'asociados_nuevos' => 'Nuevos asociados',
+];
+$valor = static function (string $campo, $predeterminado = '') use ($seguimiento) {
+    $valor = old($campo, $seguimiento[$campo] ?? $predeterminado, false);
+    return is_scalar($valor) ? (string) $valor : '';
+};
+?>
 
-<?php if(session()->getFlashdata('msg')): ?>
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        <i class="bi bi-check-circle-fill me-2"></i><?= session()->getFlashdata('msg') ?>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+<h4 class="fw-bold text-dark mb-3">Cierre de Mes - Asociados FOR</h4>
+<form action="<?= esc($cierreUrl, 'attr') ?>" method="GET" class="card border-0 shadow-sm p-3 mb-4">
+    <p class="fw-semibold mb-2">Período del resumen</p>
+    <div class="d-flex gap-2 flex-wrap mb-3">
+        <?php foreach ($rangos as $etiqueta => [$inicio, $fin]): ?>
+            <?php $seleccionado = $inicio === $fechaInicio && $fin === $fechaFin; ?>
+            <a class="btn btn-sm <?= $seleccionado ? 'btn-primary' : 'btn-outline-primary' ?>"
+               <?= $seleccionado ? 'aria-current="true"' : '' ?>
+               href="<?= esc($cierreUrl . '?' . http_build_query(['desde' => $inicio, 'hasta' => $fin]), 'attr') ?>"><?= esc($etiqueta) ?></a>
+        <?php endforeach; ?>
     </div>
-<?php endif; ?>
+    <div class="d-flex gap-2 flex-wrap align-items-end">
+        <div>
+            <label for="rango-desde" class="form-label">Desde</label>
+            <input type="date" id="rango-desde" name="desde" class="form-control" value="<?= esc($fechaInicio, 'attr') ?>" required>
+        </div>
+        <div>
+            <label for="rango-hasta" class="form-label">Hasta</label>
+            <input type="date" id="rango-hasta" name="hasta" class="form-control" value="<?= esc($fechaFin, 'attr') ?>" required>
+        </div>
+        <button type="submit" class="btn btn-primary">Aplicar rango</button>
+    </div>
+    <?php if ($errorRango): ?>
+        <div class="alert alert-warning mt-3 mb-0" role="alert"><?= esc($errorRango) ?></div>
+    <?php endif; ?>
+</form>
 
 <!-- TARJETAS DE KPIs -->
 <div class="row g-3 mb-4">
@@ -77,7 +104,7 @@
                 </thead>
                 <tbody>
                     <?php if(empty($resumenPorAsociado)): ?>
-                        <tr><td colspan="7" class="text-center text-muted py-3">Sin registros este mes.</td></tr>
+                        <tr><td colspan="7" class="text-center text-muted py-3">Sin registros en este período.</td></tr>
                     <?php else: ?>
                         <?php foreach($resumenPorAsociado as $r): ?>
                             <tr>
@@ -100,77 +127,119 @@
     </div>
 </div>
 
-<!-- CAPTURA DE SEGUIMIENTO -->
-<div class="card border-0 shadow-sm mb-4">
-    <div class="card-header bg-white fw-bold py-3">
-        <i class="bi bi-plus-circle-dotted me-2 text-primary"></i>Registrar Seguimiento Semanal
-    </div>
-    <div class="card-body">
-    <form action="<?= base_url('socios/guardar-seguimiento') ?>" method="POST">
-    <div class="row g-3">
-        <div class="col-md-3">
-            <label class="form-label small fw-bold">Semana / Fecha</label>
-            <input type="date" name="semana_fecha" class="form-control" value="<?= date('Y-m-d') ?>" required>
+<?php if ($puedeEditar): ?>
+    <?php $accion = $seguimiento ? 'socios/actualizar-seguimiento/' . $seguimiento['id'] : 'socios/guardar-seguimiento'; ?>
+    <section id="form-seguimiento" class="card border-0 shadow-sm mb-4" aria-labelledby="titulo-form-seguimiento">
+        <h5 id="titulo-form-seguimiento" class="card-header bg-white fw-bold py-3 mb-0">
+            <?= $seguimiento ? 'Editar seguimiento semanal' : 'Registrar Seguimiento Semanal' ?>
+        </h5>
+        <div class="card-body">
+            <?php if ($error = session()->getFlashdata('error_seguimiento')): ?>
+                <div class="alert alert-danger" role="alert"><?= esc($error) ?></div>
+            <?php endif; ?>
+            <form action="<?= esc(base_url($accion) . '?' . $queryRango, 'attr') ?>" method="POST">
+                <?= csrf_field() ?>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="seguimiento-fecha" class="form-label">Fecha de seguimiento</label>
+                        <input type="date" id="seguimiento-fecha" name="semana_fecha" class="form-control"
+                               value="<?= esc($valor('semana_fecha', date('Y-m-d')), 'attr') ?>" required>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="select-socio" class="form-label">Asociado FOR</label>
+                        <select name="socio_id" id="select-socio" class="form-select" required>
+                            <option value="">Buscar asociado</option>
+                            <?php foreach ($socios as $socio): ?>
+                                <option value="<?= (int) $socio['id'] ?>" <?= (string) $socio['id'] === $valor('socio_id') ? 'selected' : '' ?>>
+                                    <?= esc($socio['nombre']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label for="select-prospecto" class="form-label">Cliente / Prospecto</label>
+                        <select name="prospect_id" id="select-prospecto" class="form-select">
+                            <option value="">Sin prospecto</option>
+                            <?php foreach ($prospects as $prospecto): ?>
+                                <option value="<?= (int) $prospecto['id'] ?>" <?= (string) $prospecto['id'] === $valor('prospect_id') ? 'selected' : '' ?>>
+                                    <?= esc($prospecto['company_name']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <?php foreach ($indicadores as $campo => $etiqueta): ?>
+                        <div class="col-6 col-md">
+                            <label for="seguimiento-<?= $campo ?>" class="form-label"><?= esc($etiqueta) ?></label>
+                            <input type="number" id="seguimiento-<?= $campo ?>" name="<?= $campo ?>" class="form-control"
+                                   value="<?= esc($valor($campo, 0), 'attr') ?>" min="0" max="2147483647">
+                        </div>
+                    <?php endforeach; ?>
+                </div>
+                <div class="mt-3 text-end">
+                    <?php if ($seguimiento): ?>
+                        <a href="<?= esc($cierreRangoUrl . '#bitacora-seguimiento', 'attr') ?>" class="btn btn-outline-secondary">Cancelar</a>
+                    <?php endif; ?>
+                    <button type="submit" class="btn btn-primary">
+                        <?= $seguimiento ? 'Guardar cambios' : 'Agregar seguimiento' ?>
+                    </button>
+                </div>
+            </form>
         </div>
-        <div class="col-md-3">
-            <label class="form-label small fw-bold">Asociado FOR</label>
-            <!-- SE AGREGÓ EL ID: select-socio -->
-            <select name="socio_id" id="select-socio" class="form-select" required>
-                <option value="">-- Buscar asociado... --</option>
-                <?php foreach($socios as $s): ?>
-                    <option value="<?= $s['id'] ?>"><?= esc($s['nombre']) ?></option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-        <div class="col-md-3">
-            <label class="form-label small fw-bold">Cliente / Prospecto</label>
-            <!-- SE AGREGÓ EL ID: select-prospecto -->
-            <select name="prospect_id" id="select-prospecto" class="form-select">
-                <option value="">-- Buscar cliente... --</option>
-                <?php foreach($prospects as $p): ?>
-                    <option value="<?= $p['id'] ?>"><?= esc($p['company_name']) ?></option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-        <div class="col-md-3">
-            <label class="form-label small fw-bold">Citas Realizadas</label>
-            <input type="number" name="citas_realizadas" class="form-control" value="0" min="0">
-        </div>
-    </div>
+    </section>
+<?php endif; ?>
 
-            <div class="row g-3 mt-1">
-                <div class="col-md-3">
-                    <label class="form-label small fw-bold">Citas Programadas</label>
-                    <input type="number" name="citas_programadas" class="form-control" value="0" min="0">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label small fw-bold">Propuestas</label>
-                    <input type="number" name="propuestas" class="form-control" value="0" min="0">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label small fw-bold">Cierres</label>
-                    <input type="number" name="cierres" class="form-control" value="0" min="0">
-                </div>
-                <div class="col-md-3">
-                    <label class="form-label small fw-bold">Asociados Nuevos</label>
-                    <input type="number" name="asociados_nuevos" class="form-control" value="0" min="0">
-                </div>
-            </div>
-
-            <div class="mt-3 text-end">
-                <button type="submit" class="btn btn-primary fw-bold px-4">
-                    <i class="bi bi-save me-1"></i> Agregar Seguimiento
-                </button>
-            </div>
-        </form>
+<section id="bitacora-seguimiento" class="card border-0 shadow-sm mb-4" aria-labelledby="titulo-bitacora">
+    <?php if ($mensaje = session()->getFlashdata('msg')): ?>
+        <div class="alert alert-success m-3" role="status"><?= esc($mensaje) ?></div>
+    <?php endif; ?>
+    <div class="card-header bg-white py-3">
+        <h5 id="titulo-bitacora" class="fw-bold mb-1">Bitácora de seguimientos</h5>
+        <p class="small text-muted mb-0">Historial completo de capturas, de la más reciente a la más antigua por fecha de seguimiento.</p>
     </div>
-</div>
+    <?php if (!$bitacora): ?>
+        <p class="text-muted text-center p-3 mb-0">Aún no hay seguimientos registrados.</p>
+    <?php else: ?>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th scope="col">Fecha</th>
+                        <th scope="col">Asociado</th>
+                        <th scope="col">Cliente / Prospecto</th>
+                        <?php foreach ($indicadores as $etiqueta): ?>
+                            <th scope="col" class="text-end"><?= esc($etiqueta) ?></th>
+                        <?php endforeach; ?>
+                        <?php if ($puedeEditar): ?><th scope="col">Acción</th><?php endif; ?>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php foreach ($bitacora as $registro): ?>
+                        <tr>
+                            <td class="text-nowrap"><?= esc($registro['semana_fecha']) ?></td>
+                            <td><?= esc($registro['socio_nombre'] ?? '—') ?></td>
+                            <td><?= esc($registro['cliente_nombre'] ?? '—') ?></td>
+                            <?php foreach ($indicadores as $campo => $etiqueta): ?>
+                                <td class="text-end"><?= (int) $registro[$campo] ?></td>
+                            <?php endforeach; ?>
+                            <?php if ($puedeEditar): ?>
+                                <td>
+                                    <a class="btn btn-sm btn-outline-primary"
+                                       href="<?= esc($cierreRangoUrl . '&editar=' . (int) $registro['id'] . '#form-seguimiento', 'attr') ?>">Editar</a>
+                                </td>
+                            <?php endif; ?>
+                        </tr>
+                    <?php endforeach; ?>
+                </tbody>
+            </table>
+        </div>
+    <?php endif; ?>
+</section>
 
 <script>
     const ctx = document.getElementById('graficaAsociados').getContext('2d');
-    const datos = <?= json_encode($resumenPorAsociado) ?>;
+    const datos = <?= json_encode($resumenPorAsociado, JSON_HEX_TAG | JSON_INVALID_UTF8_SUBSTITUTE) ?>;
 
-    new Chart(ctx, {
+    if (typeof Chart !== "undefined") new Chart(ctx, {
         type: 'bar',
         data: {
             labels: datos.map(d => d.socio_nombre),
@@ -183,16 +252,10 @@
         options: { responsive: true, scales: { y: { beginAtZero: true } } }
     });
 
-    // --- NUEVO: Inicializar Autocomplete en los Selects ---
-    new TomSelect("#select-socio", {
-        create: false,
-        placeholder: "-- Buscar asociado... --",
-    });
-
-    new TomSelect("#select-prospecto", {
-        create: false,
-        placeholder: "-- Buscar cliente... --",
-    });
+    if (typeof TomSelect !== "undefined" && document.getElementById("select-socio")) {
+        new TomSelect("#select-socio", { create: false });
+        new TomSelect("#select-prospecto", { create: false });
+    }
 </script>
 
 <?= $this->endSection() ?>

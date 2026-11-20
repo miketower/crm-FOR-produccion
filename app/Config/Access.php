@@ -51,7 +51,7 @@ class Access extends BaseConfig
         'Eventos' => ['index' => 'eventos.ver', 'show' => 'eventos.ver', 'guardar' => 'eventos.modificar', 'editar' => 'eventos.modificar', 'actualizar' => 'eventos.modificar'],
         'Vacantes' => ['index' => 'vacantes.ver', 'crear' => 'vacantes.modificar', 'guardar' => 'vacantes.modificar', 'actualizar' => 'vacantes.modificar'],
         'Clientes' => ['index' => 'clientes.ver', 'show' => 'clientes.ver', 'editar' => 'clientes.modificar', 'actualizar' => 'clientes.modificar'],
-        'Socios' => ['index' => 'socios.ver', 'show' => 'socios.ver', 'editar' => 'socios.modificar', 'actualizar' => 'socios.modificar', 'guardar' => 'socios.modificar', 'cierreMes' => 'cierre_socios.ver', 'guardarSeguimiento' => 'cierre_socios.modificar'],
+        'Socios' => ['index' => 'socios.ver', 'show' => 'socios.ver', 'editar' => 'socios.modificar', 'actualizar' => 'socios.modificar', 'guardar' => 'socios.modificar', 'cierreMes' => 'cierre_socios.ver', 'guardarSeguimiento' => 'cierre_socios.modificar', 'actualizarSeguimiento' => 'cierre_socios.modificar'],
         'Ventas' => ['index' => 'ventas.ver', 'editar' => 'ventas.modificar', 'guardar' => 'ventas.modificar', 'actualizar' => 'ventas.modificar'],
         'Importar' => ['index' => 'importar.ver', 'ventas' => 'importar.ver', 'procesar' => 'importar.modificar', 'procesarVentasCsv' => 'importar.modificar', 'procesarUnificado' => 'importar.modificar'],
         'CortesSemanal' => ['index' => 'carga.ver', 'guardar' => 'carga.modificar'],
