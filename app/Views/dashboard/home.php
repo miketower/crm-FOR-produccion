@@ -149,7 +149,7 @@
                             </div>
                         </div>
 
-                        <h6 class="fw-bold text-muted text-center small mb-3">Distribución por Canal</h6>
+                        <h6 class="fw-bold text-muted text-center small mb-3">Distribución por origen</h6>
                         <div id="chart-citas-julio"></div>
                     </div>
                 </div>
@@ -371,6 +371,7 @@
     // GRÁFICAS DE CITAS DESGLOSADAS
     // ==========================================
     
+    const coloresOrigenes = ['#0d6efd', '#198754', '#ffc107', '#0dcaf0', '#6f42c1', '#fd7e14', '#d63384'];
     new ApexCharts(document.querySelector("#chart-citas-julio"), {
         series: [{
             name: 'Citas',
@@ -380,7 +381,7 @@
         plotOptions: {
             bar: { distributed: true, borderRadius: 4, horizontal: true, dataLabels: { position: 'bottom' } }
         },
-        colors: ['#0d6efd', '#198754', '#ffc107', '#0dcaf0'],
+        colors: coloresOrigenes,
         xaxis: { categories: <?php echo json_encode($julioDistribucionLabels); ?> },
         legend: { show: false },
         dataLabels: { 
@@ -399,7 +400,7 @@
         series: <?php echo json_encode($sem3DistribucionValores); ?>,
         chart: { type: 'donut', height: 250 },
         labels: <?php echo json_encode($sem3DistribucionLabels); ?>,
-        colors: ['#0d6efd', '#198754', '#ffc107', '#0dcaf0'],
+        colors: coloresOrigenes,
         plotOptions: {
             pie: { donut: { size: '60%', labels: { show: true, name: { show: true }, value: { show: true } } } }
         },

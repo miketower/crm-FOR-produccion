@@ -2,6 +2,8 @@
 
 namespace App\Controllers;
 
+use App\Libraries\Ingresos\OrigenesCitas;
+
 class CargaComercial extends BaseController
 {
     public function index()
@@ -37,6 +39,7 @@ class CargaComercial extends BaseController
             'canalAsignado' => $canalAsignado,
             'esAdmin'       => $esAdmin,
             'userEmail'     => $userEmail,
+            'origenesCitas' => OrigenesCitas::disponibles($db),
             'historial'     => $historial
         ];
 
@@ -64,23 +67,34 @@ class CargaComercial extends BaseController
             $canalFinal = $this->request->getPost('canal');
         }
 
-        // Captura desglosada de citas
-        $citasAsociados = (int) $this->request->getPost('citas_asociados');
-        $citasDirecta   = (int) $this->request->getPost('citas_directa');
-        $citasEventos   = (int) $this->request->getPost('citas_eventos');
-        $citasProsper   = (int) $this->request->getPost('citas_prosper');
-        
-        $totalCitas = $citasAsociados + $citasDirecta + $citasEventos + $citasProsper;
+        $origenesDisponibles = OrigenesCitas::disponibles($db);
+        $citas = [];
+        foreach (OrigenesCitas::TODOS as $campo => $etiqueta) {
+            $valor = $this->request->getPost($campo);
+            if (!isset(OrigenesCitas::NUEVOS[$campo])) {
+                $citas[$campo] = (int) $valor;
+                continue;
+            }
+            $cantidad = filter_var($valor ?? 0, FILTER_VALIDATE_INT, [
+                'options' => ['min_range' => 0, 'max_range' => OrigenesCitas::MAXIMO_SEMANAL],
+            ]);
+            if ($cantidad === false) {
+                return redirect()->to('/carga-comercial')->with('error', 'Las citas de BNI, QRO y MKT deben ser enteros de 0 a 10,000,000.');
+            }
+            if (!isset($origenesDisponibles[$campo])) {
+                if ($cantidad > 0) {
+                    return redirect()->to('/carga-comercial')->with('error', 'Instala los nuevos orígenes de citas antes de guardar esta carga.');
+                }
+                continue;
+            }
+            $citas[$campo] = $cantidad;
+        }
 
-        $data = [
+        $data = $citas + [
             'user_id'         => session()->get('user_id') ?? null,
             'canal'           => $canalFinal,
             'fecha'           => $this->request->getPost('fecha'),
-            'citas_asociados' => $citasAsociados,
-            'citas_directa'   => $citasDirecta,
-            'citas_eventos'   => $citasEventos,
-            'citas_prosper'   => $citasProsper,
-            'citas'           => $totalCitas,
+            'citas'           => array_sum($citas),
             'propuestas'      => (int) $this->request->getPost('propuestas'),
             'cierres'         => (int) $this->request->getPost('cierres'),
             'monto_vendido'   => (float) $this->request->getPost('monto_vendido'),

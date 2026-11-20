@@ -2,6 +2,8 @@
 
 namespace App\Controllers;
 
+use App\Libraries\Ingresos\OrigenesCitas;
+
 class Socios extends BaseController
 {
     public function index()
@@ -343,10 +345,10 @@ class Socios extends BaseController
         if (!$consulta) {
             return;
         }
-        $total = (int) $consulta->getRowArray()['total'];
+        $captura['citas_asociados'] = (int) $consulta->getRowArray()['total'];
         $db->table('capturas_comerciales')->where('id', $captura['id'])->update([
-            'citas_asociados' => $total,
-            'citas' => $total + (int) $captura['citas_directa'] + (int) $captura['citas_eventos'] + (int) $captura['citas_prosper'],
+            'citas_asociados' => $captura['citas_asociados'],
+            'citas' => array_sum(array_intersect_key($captura, OrigenesCitas::TODOS)),
         ]);
     }
 

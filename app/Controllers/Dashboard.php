@@ -2,6 +2,8 @@
 
 namespace App\Controllers;
 
+use App\Libraries\Ingresos\OrigenesCitas;
+
 class Dashboard extends BaseController
 {
     public function index()
@@ -94,17 +96,10 @@ class Dashboard extends BaseController
         // =======================================================================================
         // SUMATORIA DINÁMICA DE ACTIVIDAD 
         // =======================================================================================
+        $origenes = OrigenesCitas::disponibles($db);
+        $sumasPorOrigen = implode(', ', array_map(static fn ($campo) => "SUM($campo) AS $campo", array_keys($origenes)));
         $capturas = $db->table('capturas_comerciales')
-            ->select('
-                canal,
-                SUM(citas_asociados) as total_citas_asociados,
-                SUM(citas_directa)   as total_citas_directa,
-                SUM(citas_eventos)   as total_citas_eventos,
-                SUM(citas_prosper)   as total_citas_prosper,
-                SUM(citas)           as total_citas,
-                SUM(propuestas)      as total_propuestas,
-                SUM(cierres)         as total_cierres
-            ')
+            ->select('canal, SUM(citas) AS total_citas, SUM(propuestas) AS total_propuestas, SUM(cierres) AS total_cierres, ' . $sumasPorOrigen)
             ->where('deleted_at', null)
             ->groupBy('canal')
             ->get()
@@ -121,11 +116,7 @@ class Dashboard extends BaseController
             'Venta en frío' => 0
         ];
 
-        $totalCitasDinamico        = 0;
-        $totalCitasAsociados       = 0;
-        $totalCitasDirecta         = 0;
-        $totalCitasEventos         = 0;
-        $totalCitasProsper         = 0;
+        $citasPorOrigen = array_fill_keys(array_keys($origenes), 0);
 
         $totalPropuestasDinamico   = 0;
         $totalCierresDinamico      = 0;
@@ -139,12 +130,10 @@ class Dashboard extends BaseController
                 $cierres[$idx]           += (int) $c['total_cierres'];
             }
 
-            $totalCitasAsociados     += (int) $c['total_citas_asociados'];
-            $totalCitasDirecta       += (int) $c['total_citas_directa'];
-            $totalCitasEventos       += (int) $c['total_citas_eventos'];
-            $totalCitasProsper       += (int) $c['total_citas_prosper'];
+            foreach ($citasPorOrigen as $campo => $total) {
+                $citasPorOrigen[$campo] = $total + (int) $c[$campo];
+            }
 
-            $totalCitasDinamico        += (int) $c['total_citas'];
             $totalPropuestasDinamico   += (int) $c['total_propuestas'];
             $totalCierresDinamico      += (int) $c['total_cierres'];
         }
@@ -230,35 +219,22 @@ class Dashboard extends BaseController
         $semanaMostrar = 1; 
         $tituloSemanaCitas = "Citas Semana " . $semanaMostrar . " (Septiembre)";
 
-        $distribucionCitasLabels = ['Asociados FOR', 'Venta Directa', 'Eventos', 'Prosper'];
-
-        $septiembreDistribucionValores = [
-            $totalCitasAsociados,
-            $totalCitasDirecta,
-            $totalCitasEventos,
-            $totalCitasProsper
-        ];
+        $distribucionCitasLabels = array_values(array_replace($origenes, ['citas_asociados' => 'Asociados FOR']));
+        $septiembreDistribucionValores = array_values($citasPorOrigen);
         $totalCitasSeptiembre = array_sum($septiembreDistribucionValores);
 
         $capturasSemana = $db->table('capturas_comerciales')
-            ->select('
-                SUM(citas_asociados) as sem_citas_asociados,
-                SUM(citas_directa)   as sem_citas_directa,
-                SUM(citas_eventos)   as sem_citas_eventos,
-                SUM(citas_prosper)   as sem_citas_prosper
-            ')
+            ->select($sumasPorOrigen)
             ->where('fecha >=', '2026-09-01')
             ->where('fecha <=', '2026-09-07')
             ->where('deleted_at', null)
             ->get()
             ->getRowArray();
 
-        $semanaDistribucionValores = [
-            (int) ($capturasSemana['sem_citas_asociados'] ?? 0),
-            (int) ($capturasSemana['sem_citas_directa'] ?? 0),
-            (int) ($capturasSemana['sem_citas_eventos'] ?? 0),
-            (int) ($capturasSemana['sem_citas_prosper'] ?? 0)
-        ];
+        $semanaDistribucionValores = array_map(
+            static fn ($campo) => (int) ($capturasSemana[$campo] ?? 0),
+            array_keys($origenes)
+        );
         $totalCitasSemana = array_sum($semanaDistribucionValores);
 
         $data['semanaMostrar']             = $semanaMostrar;

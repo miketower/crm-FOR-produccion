@@ -1,6 +1,7 @@
 <?= $this->extend('layout/main') ?>
 
 <?= $this->section('contenido') ?>
+<?php if ($error = session()->getFlashdata('error')): ?><div class="alert alert-danger"><?= esc($error) ?></div><?php endif; ?>
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
@@ -62,23 +63,21 @@
                     <h6 class="fw-bold text-secondary small mb-3"><i class="bi bi-bar-chart-steps me-1"></i>Desglose de Citas por Origen</h6>
 
                     <div class="row g-2 mb-3">
-                        <div class="col-6 col-md-3">
-                            <label class="form-label small fw-bold">Asoc. FOR</label>
-                            <input type="number" name="citas_asociados" class="form-control" value="0" min="0" required>
-                        </div>
-                        <div class="col-6 col-md-3">
-                            <label class="form-label small fw-bold">Venta Directa</label>
-                            <input type="number" name="citas_directa" class="form-control" value="0" min="0" required>
-                        </div>
-                        <div class="col-6 col-md-3">
-                            <label class="form-label small fw-bold">Eventos</label>
-                            <input type="number" name="citas_eventos" class="form-control" value="0" min="0" required>
-                        </div>
-                        <div class="col-6 col-md-3">
-                            <label class="form-label small fw-bold">Prosper</label>
-                            <input type="number" name="citas_prosper" class="form-control" value="0" min="0" required>
-                        </div>
+                        <?php foreach ($origenesCitas as $campo => $etiqueta): ?>
+                            <div class="col-6 col-md-3">
+                                <label for="<?= esc($campo, 'attr') ?>" class="form-label small fw-bold"><?= esc($etiqueta) ?></label>
+                                <input type="number" id="<?= esc($campo, 'attr') ?>" name="<?= esc($campo, 'attr') ?>"
+                                       class="form-control" value="0" min="0"
+                                       <?php if (isset(\App\Libraries\Ingresos\OrigenesCitas::NUEVOS[$campo])): ?>
+                                           max="<?= \App\Libraries\Ingresos\OrigenesCitas::MAXIMO_SEMANAL ?>"
+                                       <?php endif; ?>
+                                       required>
+                            </div>
+                        <?php endforeach; ?>
                     </div>
+                    <?php if (array_diff_key(\App\Libraries\Ingresos\OrigenesCitas::NUEVOS, $origenesCitas)): ?>
+                        <p class="small text-muted">BNI, QRO y MKT estarán disponibles al instalar la actualización de Carga Semanal.</p>
+                    <?php endif; ?>
 
                     <div class="row g-2 mb-3">
                         <div class="col-6">
